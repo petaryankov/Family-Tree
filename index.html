@@ -1,0 +1,2277 @@
+<!doctype html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title id="pageTitle">Family Tree</title>
+<link rel="manifest" href="family-tree.manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#14171a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Родословие">
+<style>
+  :root {
+    --bg: #14171a;
+    --bg-deep: #0b0d0f;
+    --card: #1c2023;
+    --card-border: #2b3136;
+    --card-hover: rgba(255, 255, 255, 0.08);
+    --accent: #e8b04b;
+    --accent-dim: rgba(232, 176, 75, 0.35);
+    --ink: #eceef0;
+    --ink-dim: #9aa3aa;
+    --line: #4a5058;
+    --danger: #e5686b;
+    --btn-primary-bg: #e8b04b;
+    --btn-primary-text: #201a08;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f1ece1;
+    --bg-deep: #e3dbca;
+    --card: #ffffff;
+    --card-border: #ded4c0;
+    --card-hover: rgba(0, 0, 0, 0.04);
+    --accent: #b3721c;
+    --accent-dim: rgba(179, 114, 28, 0.2);
+    --ink: #292319;
+    --ink-dim: #756c5c;
+    --line: #b7ac97;
+    --danger: #c8443f;
+    --btn-primary-bg: #3a3f46;
+    --btn-primary-text: #f5f5f6;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: radial-gradient(ellipse at 50% -10%, var(--bg) 0%, var(--bg-deep) 70%);
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  header {
+    text-align: center;
+    max-width: 34rem;
+    margin-bottom: 2rem;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.7rem;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    margin: 0 0 0.6rem;
+  }
+
+  .logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.55rem;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  h1 {
+    font-size: clamp(1.7rem, 4.5vw, 2.3rem);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  main {
+    width: 100%;
+    max-width: 68rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 1.25rem 1.4rem;
+  }
+
+  .panel h2 {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 1rem;
+  }
+
+  form#addForm {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.8rem;
+    align-items: end;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .field.wide {
+    grid-column: span 2;
+  }
+
+  .field label {
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.03em;
+  }
+
+  .field input, .field select {
+    background: var(--bg-deep);
+    border: 1px solid var(--card-border);
+    border-radius: 7px;
+    color: var(--ink);
+    padding: 0.5rem 0.6rem;
+    font-size: 0.88rem;
+    font-family: var(--sans);
+  }
+
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  #fBirthInput, #fDeathInput { cursor: pointer; }
+
+  .file-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .file-input-btn {
+    flex: none;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .photo-preview-wrap {
+    margin-top: 0.5rem;
+  }
+
+  .photo-preview-frame {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    line-height: 0;
+  }
+
+  .photo-preview-frame img {
+    display: block;
+    max-width: 220px;
+    max-height: 220px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    cursor: crosshair;
+  }
+
+  .photo-focus-marker {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    margin-top: -9px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+  }
+
+  .photo-preview-hint {
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    margin: 0.3rem 0 0;
+  }
+
+  .photo-remove-btn {
+    margin-top: 0.4rem;
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--danger);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+  }
+  .photo-remove-btn:hover { border-color: var(--danger); filter: none; }
+
+  /* A small custom calendar popup — a real day-grid to click, not native
+     browser date-input chrome (whose format/locale we can't control) and
+     not bare Day/Month/Year selects either. Always Day-Month-Year in its
+     own header, so the month reads in the middle no matter the browser. */
+  .date-popup {
+    position: absolute;
+    z-index: 20;
+    width: 260px;
+    max-width: calc(100vw - 16px);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.7rem;
+    box-shadow: 0 12px 28px -8px rgba(0,0,0,0.6);
+  }
+
+  .dp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .dp-nav {
+    background: var(--bg-deep);
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .dp-title {
+    display: flex;
+    gap: 0.3rem;
+    flex: 1;
+  }
+  .dp-title select, .dp-title input {
+    background: var(--bg-deep);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    color: var(--ink);
+    font-size: 0.8rem;
+    padding: 0.3rem 0.35rem;
+  }
+  .dp-title select { flex: 1.3; }
+  .dp-title input { flex: 1; min-width: 0; }
+
+  .dp-weekdays, .dp-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .dp-weekdays span {
+    text-align: center;
+    font-size: 0.66rem;
+    color: var(--ink-dim);
+    padding: 0.2rem 0;
+  }
+
+  .dp-grid button {
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-size: 0.78rem;
+    padding: 0.35rem 0;
+    border-radius: 6px;
+  }
+  .dp-grid button:hover { background: var(--card-hover, rgba(255,255,255,0.08)); }
+  .dp-grid button.dp-outside { color: var(--ink-dim); opacity: 0.4; }
+  .dp-grid button.dp-selected { background: var(--accent); color: #201a08; font-weight: 700; }
+  .dp-grid button.dp-today:not(.dp-selected) { border: 1px solid var(--accent-dim); }
+
+  .dp-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--card-border);
+  }
+  .dp-footer button {
+    background: transparent;
+    border: none;
+    color: var(--ink-dim);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.3rem;
+    text-decoration: underline;
+  }
+  .dp-footer button:hover { color: var(--accent); }
+
+  .person-info-popup {
+    position: absolute;
+    z-index: 25;
+    width: 220px;
+    max-width: calc(100vw - 16px);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.7rem;
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+  }
+
+  .person-info-popup .info-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+    word-break: break-word;
+  }
+
+  .person-info-popup .info-row {
+    display: flex;
+    gap: 0.4rem;
+    font-size: 0.76rem;
+    color: var(--ink);
+    padding: 0.15rem 0;
+  }
+  .person-info-popup .info-row[hidden] { display: none; }
+
+  .person-info-popup .info-label {
+    flex: none;
+    color: var(--ink-dim);
+    min-width: 4.2rem;
+  }
+
+  .person-info-popup .info-edit-btn {
+    margin-top: 0.55rem;
+    width: 100%;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    font-size: 0.78rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 7px;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    transition: transform 0.1s ease, filter 0.15s ease;
+  }
+  button:hover { filter: brightness(1.1); }
+  button:active { transform: translateY(1px); }
+
+  #addForm button {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    grid-column: span 1;
+    align-self: end;
+  }
+
+  #addForm #cancelEditBtn {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--ink-dim);
+    align-self: end;
+  }
+  #addForm #cancelEditBtn:hover { border-color: var(--danger); color: var(--danger); }
+
+  .person.editing {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-dim);
+  }
+
+  .person .edit-hint {
+    font-size: 0.6rem;
+    color: var(--ink-dim);
+    opacity: 0;
+    margin-top: 0.15rem;
+    transition: opacity 0.1s ease;
+  }
+  .person:hover .edit-hint { opacity: 0.85; }
+
+  #treeWrap {
+    overflow: auto;
+    border-radius: 10px;
+    background: var(--bg-deep);
+    min-height: 340px;
+    max-height: 72vh;
+    position: relative;
+  }
+
+  #treeZoomSpacer {
+    position: relative;
+  }
+
+  #treeInner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+  }
+
+  .zoom-controls {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .zoom-controls button {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--ink-dim);
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+  .zoom-controls button:hover { border-color: var(--accent); color: var(--accent); filter: none; }
+
+  .person {
+    position: absolute;
+    width: 140px;
+    background: var(--card);
+    border: 1.5px solid var(--card-border);
+    border-radius: 9px;
+    padding: 0.5rem 0.6rem;
+    text-align: center;
+    box-shadow: 0 4px 10px -4px rgba(0,0,0,0.5);
+    cursor: pointer;
+  }
+
+  .person .photo, .person .photo-placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    margin: 0 auto 0.35rem;
+    border: 1.5px solid var(--card-border);
+    background: var(--bg-deep);
+    display: block;
+  }
+
+  .person .photo { object-fit: cover; }
+
+  .person .photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink-dim);
+  }
+
+  .person .name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .person .origin {
+    font-size: 0.62rem;
+    font-style: italic;
+    color: var(--ink-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .person .dates {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--ink-dim);
+    margin-top: 0.15rem;
+  }
+
+  .person .age {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--accent);
+    margin-top: 0.1rem;
+  }
+
+  .person .children-count {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--ink-dim);
+    margin-top: 0.2rem;
+    padding-top: 0.2rem;
+    border-top: 1px solid var(--card-border);
+  }
+
+  .person .del {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--danger);
+    color: #2a0d0e;
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+    padding: 0;
+    display: none;
+  }
+  .person:hover .del { display: block; }
+
+  .empty-hint {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 0.9rem;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .toolbar-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-self: start;
+  }
+  .zoom-controls { justify-self: center; }
+  #clearAllBtn { justify-self: end; }
+
+  .toolbar button {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--ink-dim);
+  }
+  .toolbar-group button:hover { border-color: var(--accent); color: var(--accent); }
+  #clearAllBtn:hover { border-color: var(--danger); color: var(--danger); }
+
+  footer {
+    margin: 1rem auto 0;
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    text-align: center;
+    max-width: 30rem;
+    line-height: 1.5;
+  }
+
+  /* Print: just the tree, on paper-friendly light colors, with the full
+     tree visible (not clipped to whatever fit the on-screen scroll box). */
+  @media print {
+    header .eyebrow, .surprise-btn, form#addForm,
+    .panel h2, .toolbar, footer, .edit-hint, .del, .header-controls, .zoom-controls {
+      display: none !important;
+    }
+    #treeInner { transform: none !important; }
+    #treeZoomSpacer { width: auto !important; height: auto !important; }
+    html, body { background: #fff; }
+    .panel {
+      background: #fff;
+      border: none;
+      padding: 0;
+    }
+    #treeWrap {
+      overflow: visible;
+      background: #fff;
+      min-height: 0;
+      max-height: none;
+    }
+    .person {
+      border-color: #999;
+      box-shadow: none;
+      background: #fafafa;
+    }
+    .person .name { color: #111; }
+    .person .origin { color: #555; }
+    .person .dates, .person .age { color: #444; }
+    .person .children-count { color: #444; border-top-color: #ccc; }
+    line { stroke: #888 !important; }
+  }
+
+  /* Mobile tightening — form fields stack to one/two columns, panels lose
+     side padding, the language toggle stays reachable in the header. */
+  @media (max-width: 640px) {
+    body { padding: 1.5rem 0.85rem 3rem; }
+    header { margin-bottom: 1.4rem; }
+    .panel { padding: 1rem 0.9rem; }
+    form#addForm { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+    .toolbar { grid-template-columns: 1fr; justify-items: center; }
+    .toolbar-group { justify-content: center; justify-self: center; }
+    .zoom-controls { justify-self: center; }
+    #clearAllBtn { width: 100%; justify-self: center; }
+  }
+
+  .header-controls {
+    position: fixed;
+    top: 1.4rem;
+    right: 1.8rem;
+    z-index: 30;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .lang-toggle, .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--ink-dim);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 0.35rem 0.65rem;
+  }
+  .lang-toggle:hover, .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-controls">
+    <button class="theme-toggle" id="themeToggle" type="button">&#9789;</button>
+    <button class="lang-toggle" id="langToggle" type="button">BG</button>
+  </div>
+  <p class="eyebrow" data-i18n="eyebrow">Genealogy</p>
+  <div class="title-row">
+    <img class="logo" src="icon-192.png" alt="">
+    <h1 data-i18n="title">Family Tree</h1>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2 data-i18n="addPersonHeading">Add a person</h2>
+    <form id="addForm">
+      <div class="field">
+        <label for="fName" data-i18n="labelName">Name</label>
+        <input id="fName" type="text" data-i18n-placeholder="placeholderName" placeholder="Full name" required>
+      </div>
+      <div class="field">
+        <label for="fOrigin" data-i18n="labelOrigin">Family of origin</label>
+        <input id="fOrigin" type="text" data-i18n-placeholder="placeholderOptional" placeholder="optional">
+      </div>
+      <div class="field">
+        <label for="fPhoto" data-i18n="labelPhoto">Photo</label>
+        <div class="file-input">
+          <button type="button" id="fPhotoBtn" class="file-input-btn" data-i18n="choosePhoto">Choose File</button>
+        </div>
+        <input id="fPhoto" type="file" accept="image/*" hidden>
+        <div id="photoPreviewWrap" class="photo-preview-wrap" hidden>
+          <div class="photo-preview-frame">
+            <img id="photoPreviewImg" alt="">
+            <div id="photoFocusMarker" class="photo-focus-marker"></div>
+          </div>
+          <p class="photo-preview-hint" data-i18n="photoPreviewHint">Click the photo to center it on the face.</p>
+          <button type="button" id="photoRemoveBtn" class="photo-remove-btn" data-i18n="removePhoto">Remove photo</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fBirthInput" data-i18n="labelBorn">Born</label>
+        <input id="fBirthInput" type="text" readonly autocomplete="off" data-i18n-placeholder="placeholderPickDate" placeholder="Click">
+        <input type="hidden" id="fBirthValue">
+      </div>
+      <div class="field">
+        <label for="fDeathInput" data-i18n="labelDied">Died</label>
+        <input id="fDeathInput" type="text" readonly autocomplete="off" data-i18n-placeholder="placeholderOptional" placeholder="optional">
+        <input type="hidden" id="fDeathValue">
+      </div>
+      <div class="field">
+        <label for="fSpouse" data-i18n="labelSpouse">Spouse</label>
+        <select id="fSpouse"><option value="" data-i18n="none">— none —</option></select>
+      </div>
+      <div class="field">
+        <label for="fParent1" data-i18n="labelParent">Parent</label>
+        <select id="fParent1"><option value="" data-i18n="none">— none —</option></select>
+      </div>
+      <div class="field">
+        <label for="fParent2" data-i18n="labelParent2">Parent 2</label>
+        <select id="fParent2"><option value="" data-i18n="none">— none —</option></select>
+      </div>
+      <button type="submit" id="submitBtn" data-i18n="addPerson">Add person</button>
+      <button type="button" id="cancelEditBtn" data-i18n="cancelEdit" hidden>Cancel edit</button>
+    </form>
+  </section>
+
+  <div id="datePopup" class="date-popup" hidden>
+    <div class="dp-header">
+      <button type="button" id="dpPrev" class="dp-nav" data-i18n-aria-label="prevMonth" aria-label="Previous month">‹</button>
+      <div class="dp-title">
+        <select id="dpMonth"></select>
+        <input id="dpYear" type="number" min="1000" max="2100">
+      </div>
+      <button type="button" id="dpNext" class="dp-nav" data-i18n-aria-label="nextMonth" aria-label="Next month">›</button>
+    </div>
+    <div class="dp-weekdays" id="dpWeekdays">
+      <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+    </div>
+    <div class="dp-grid" id="dpGrid"></div>
+    <div class="dp-footer">
+      <button type="button" id="dpYearOnly" data-i18n="yearOnly">Only know the year</button>
+      <button type="button" id="dpClear" data-i18n="clear">Clear</button>
+    </div>
+  </div>
+
+  <div id="personInfoPopup" class="person-info-popup" hidden>
+    <div class="info-name" id="infoName"></div>
+    <div class="info-row" id="infoOrigin" hidden><span class="info-label" data-i18n="infoOriginLabel">Origin</span><span id="infoOriginValue"></span></div>
+    <div class="info-row" id="infoBorn" hidden><span class="info-label" data-i18n="infoBornLabel">Born</span><span id="infoBornValue"></span></div>
+    <div class="info-row" id="infoDied" hidden><span class="info-label" data-i18n="infoDiedLabel">Died</span><span id="infoDiedValue"></span></div>
+    <div class="info-row" id="infoAge" hidden><span class="info-label" id="infoAgeLabelText">Age</span><span id="infoAgeValue"></span></div>
+    <div class="info-row" id="infoSpouse" hidden><span class="info-label" data-i18n="infoSpouseLabel">Spouse</span><span id="infoSpouseValue"></span></div>
+    <div class="info-row" id="infoParents" hidden><span class="info-label" data-i18n="infoParentsLabel">Parents</span><span id="infoParentsValue"></span></div>
+    <div class="info-row" id="infoChildren" hidden><span class="info-label" data-i18n="infoChildrenLabel">Children</span><span id="infoChildrenValue"></span></div>
+    <button type="button" id="infoEditBtn" class="info-edit-btn" data-i18n="editPerson">Edit</button>
+  </div>
+
+  <section class="panel">
+    <h2 data-i18n="treeHeading">Tree</h2>
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button id="printBtn" type="button" data-i18n="print">Print</button>
+        <button id="importBtn" type="button" data-i18n="loadFromFile">Load from file</button>
+        <button id="exportBtn" type="button" data-i18n="saveToFile">Save to file</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <div class="zoom-controls">
+        <button type="button" id="zoomOutBtn" data-i18n-aria-label="zoomOut" aria-label="Zoom out">−</button>
+        <button type="button" id="zoomFitBtn" data-i18n-aria-label="zoomFit" aria-label="Fit to screen">⊡</button>
+        <button type="button" id="zoomInBtn" data-i18n-aria-label="zoomIn" aria-label="Zoom in">+</button>
+      </div>
+      <button id="clearAllBtn" type="button" data-i18n="clearTree">Clear entire tree</button>
+    </div>
+    <div id="treeWrap">
+      <div id="treeZoomSpacer">
+        <div id="treeInner"></div>
+      </div>
+      <p class="empty-hint" id="emptyHint" data-i18n="emptyHint">No one added yet — start with the first person above.</p>
+    </div>
+  </section>
+
+  <footer data-i18n="footer">© 2026 Petar Yankov</footer>
+</main>
+
+<script>
+(() => {
+  const STORAGE_KEY = "family-tree-people-v1";
+  const LANG_KEY = "family-tree-lang-v1";
+
+  // --- Translations --------------------------------------------------
+  const translations = {
+    en: {
+      pageTitle: "Family Tree",
+      eyebrow: "Genealogy",
+      title: "Family Tree",
+      addPersonHeading: "Add a person",
+      labelName: "Name",
+      placeholderName: "Full name",
+      labelOrigin: "Family of origin",
+      infoOriginLabel: "Origin",
+      labelPhoto: "Photo",
+      choosePhoto: "Choose File",
+      removePhoto: "Remove photo",
+      photoPreviewHint: "Click the photo to center it on the face.",
+      infoBornLabel: "Born",
+      infoDiedLabel: "Died",
+      infoAgeLabel: "Age",
+      infoAgeAtDeathLabel: "Lived",
+      livedYears: "{age} years",
+      infoParentsLabel: "Parents",
+      infoSpouseLabel: "Spouse",
+      infoChildrenLabel: "Children",
+      editPerson: "Edit",
+      alertInvalidPhotoType: "That file doesn't look like an image.",
+      alertPhotoTooLarge: "That photo is too large ({mb}MB max).",
+      alertPhotoReadError: "Couldn't read that photo — the person was saved without it.",
+      labelBorn: "Born",
+      placeholderPickDate: "Click",
+      labelDied: "Died",
+      placeholderOptional: "optional",
+      labelParent: "Parent",
+      labelParent2: "Parent 2",
+      labelSpouse: "Spouse",
+      none: "— none —",
+      addPerson: "Add person",
+      saveChanges: "Save changes",
+      cancelEdit: "Cancel edit",
+      prevMonth: "Previous month",
+      nextMonth: "Next month",
+      switchToLight: "Switch to light theme",
+      switchToDark: "Switch to dark theme",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      zoomFit: "Fit to screen",
+      yearOnly: "Only know the year",
+      clear: "Clear",
+      treeHeading: "Tree",
+      print: "Print",
+      saveToFile: "Save to file",
+      loadFromFile: "Load from file",
+      clearTree: "Clear entire tree",
+      emptyHint: "No one added yet — start with the first person above.",
+      footer: "© 2026 Petar Yankov",
+      editHint: "Click to edit",
+      removePerson: "Remove {name}",
+      agedX: "aged {age}",
+      ageX: "age {age}",
+      oneChild: "1 child",
+      manyChildren: "{n} children",
+      confirmClearAll: "Remove everyone from the tree? This can't be undone.",
+      confirmDelete: "Remove {name} from the tree? This can't be undone.",
+      alertInvalidJson: "That file isn't valid JSON.",
+      alertWrongFormat: "That doesn't look like a family tree file exported from here.",
+      confirmImport: "Load {n} people from this file? This replaces the {m} currently in the tree.",
+      alertReadError: "Couldn't read that file.",
+      weekdays: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+      months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    },
+    bg: {
+      pageTitle: "Родословно дърво",
+      eyebrow: "Родословие",
+      title: "Родословно дърво",
+      addPersonHeading: "Добави човек",
+      labelName: "Име",
+      placeholderName: "Пълно име",
+      labelOrigin: "Род",
+      infoOriginLabel: "Род",
+      labelPhoto: "Снимка",
+      choosePhoto: "Избери файл",
+      removePhoto: "Премахни снимката",
+      photoPreviewHint: "Кликни върху снимката, за да центрираш лицето.",
+      infoBornLabel: "Роден/а",
+      infoDiedLabel: "Починал/а",
+      infoAgeLabel: "Възраст",
+      infoAgeAtDeathLabel: "Живял/а",
+      livedYears: "{age} години",
+      infoParentsLabel: "Родители",
+      infoSpouseLabel: "Съпруг/а",
+      infoChildrenLabel: "Деца",
+      editPerson: "Редакция",
+      alertInvalidPhotoType: "Този файл не изглежда като снимка.",
+      alertPhotoTooLarge: "Снимката е твърде голяма (макс. {mb}MB).",
+      alertPhotoReadError: "Снимката не можа да се прочете — човекът е запазен без нея.",
+      labelBorn: "Роден/а",
+      placeholderPickDate: "Кликни",
+      labelDied: "Починал/а",
+      placeholderOptional: "по избор",
+      labelParent: "Родител",
+      labelParent2: "Родител 2",
+      labelSpouse: "Съпруг/а",
+      none: "— никой —",
+      addPerson: "Добави човек",
+      saveChanges: "Запази промените",
+      cancelEdit: "Откажи редакцията",
+      prevMonth: "Предишен месец",
+      nextMonth: "Следващ месец",
+      switchToLight: "Превключи към светла тема",
+      switchToDark: "Превключи към тъмна тема",
+      zoomIn: "Увеличи",
+      zoomOut: "Намали",
+      zoomFit: "Побери в екрана",
+      yearOnly: "Знам само годината",
+      clear: "Изчисти",
+      treeHeading: "Дърво",
+      print: "Печат",
+      saveToFile: "Запази във файл",
+      loadFromFile: "Зареди от файл",
+      clearTree: "Изчисти цялото дърво",
+      emptyHint: "Все още никой не е добавен — започни с първия човек отгоре.",
+      footer: "© 2026 Петър Янков",
+      editHint: "Кликни за редакция",
+      removePerson: "Премахни {name}",
+      agedX: "почина на {age}",
+      ageX: "на {age} години",
+      oneChild: "1 дете",
+      manyChildren: "{n} деца",
+      confirmClearAll: "Да премахна всички от дървото? Това не може да се отмени.",
+      confirmDelete: "Да премахна {name} от дървото? Това не може да се отмени.",
+      alertInvalidJson: "Файлът не е валиден JSON.",
+      alertWrongFormat: "Това не прилича на файл с родословно дърво, изнесен оттук.",
+      confirmImport: "Да заредя {n} души от този файл? Това ще замести {m}, които в момента са в дървото.",
+      alertReadError: "Файлът не можа да бъде прочетен.",
+      weekdays: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"],
+      months: ["Януари", "Февруари", "Март", "Април", "Май", "Юни", "Юли", "Август", "Септември", "Октомври", "Ноември", "Декември"],
+    },
+  };
+
+  let lang = (() => {
+    try {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "bg") return saved;
+    } catch { /* ignore */ }
+    return navigator.language && navigator.language.toLowerCase().startsWith("bg") ? "bg" : "en";
+  })();
+
+  const THEME_KEY = "family-tree-theme-v1";
+  let theme = (() => {
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved === "light" || saved === "dark") return saved;
+    } catch { /* ignore */ }
+    return "dark"; // default when nothing saved yet, regardless of system preference
+  })();
+
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", theme);
+    const btn = document.getElementById("themeToggle");
+    btn.textContent = theme === "dark" ? "☀️" : "🌙"; // sun = switch to light, crescent moon = switch to dark
+    btn.setAttribute("aria-label", t(theme === "dark" ? "switchToLight" : "switchToDark"));
+  }
+
+  function t(key, vars) {
+    let str = (translations[lang] && translations[lang][key]) ?? translations.en[key] ?? key;
+    if (vars) for (const k in vars) str = str.replace(`{${k}}`, vars[k]);
+    return str;
+  }
+
+  function applyStaticTranslations() {
+    document.documentElement.lang = lang;
+    document.getElementById("pageTitle").textContent = t("pageTitle");
+    document.title = t("pageTitle");
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    document.querySelectorAll("[data-i18n-aria-label]").forEach(el => {
+      const label = t(el.dataset.i18nAriaLabel);
+      el.setAttribute("aria-label", label);
+      el.title = label; // icon-only buttons — show what they do on hover
+    });
+
+    const weekdaySpans = document.querySelectorAll("#dpWeekdays span");
+    t("weekdays").forEach((label, i) => { if (weekdaySpans[i]) weekdaySpans[i].textContent = label; });
+
+    dpMonthSelect.innerHTML = "";
+    t("months").forEach((name, i) => {
+      const opt = document.createElement("option");
+      opt.value = i + 1;
+      opt.textContent = name;
+      dpMonthSelect.appendChild(opt);
+    });
+
+    document.getElementById("submitBtn").textContent = editingId ? t("saveChanges") : t("addPerson");
+    document.getElementById("langToggle").textContent = lang === "en" ? "BG" : "EN";
+    applyTheme();
+  }
+
+  const CARD_W = 140, CARD_H = 112;
+  const SPOUSE_GAP = 14, UNIT_GAP = 46, ROW_H = 180;
+  const PHOTO_MAX_SIZE = 160; // px — thumbnails are downscaled before storing, to keep localStorage lean
+  const MAX_PHOTO_BYTES = 8 * 1024 * 1024; // 8MB — rejected before we even try to read/decode it
+
+  /** @type {{id:string,name:string,photo:string|null,birth:string,death:string,parents:string[],spouse:string|null}[]} */
+  let people = load();
+  let editingId = null; // id of the person currently loaded into the form for editing, or null
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(people));
+    } catch { /* storage unavailable — tree still works for this session */ }
+  }
+
+  function byId(id) {
+    return people.find(p => p.id === id);
+  }
+
+  function newId() {
+    return "p" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function addPerson({ name, origin, photo, photoFocus, birth, death, parent1, parent2, spouse }) {
+    const parents = [parent1, parent2].filter(Boolean);
+    const person = {
+      id: newId(), name: name.trim(), origin: (origin || "").trim(), photo: photo || null,
+      photoFocus: photo ? (photoFocus || { x: 50, y: 50 }) : null,
+      birth: birth.trim(), death: death.trim(), parents, spouse: spouse || null,
+    };
+    people.push(person);
+    linkSpouse(person.id, spouse);
+    save();
+    render();
+  }
+
+  function updatePerson(id, { name, origin, photo, photoFocus, birth, death, parent1, parent2, spouse }) {
+    const person = byId(id);
+    if (!person) return;
+
+    // Detach from the old spouse first if the pairing is changing.
+    if (person.spouse && person.spouse !== spouse) {
+      const oldSpouse = byId(person.spouse);
+      if (oldSpouse && oldSpouse.spouse === id) oldSpouse.spouse = null;
+    }
+
+    person.name = name.trim();
+    person.origin = (origin || "").trim();
+    // The form's photo state already reflects the full intent by the time
+    // we get here — the existing photo (pre-loaded into the preview when
+    // editing began), a freshly picked replacement, or null if the person
+    // explicitly removed it — so it's safe to just take it as-is.
+    person.photo = photo || null;
+    person.photoFocus = photo ? (photoFocus || { x: 50, y: 50 }) : null;
+    person.birth = birth.trim();
+    person.death = death.trim();
+    person.parents = [parent1, parent2].filter(Boolean).filter(pid => pid !== id);
+    person.spouse = null;
+    linkSpouse(id, spouse === id ? "" : spouse);
+
+    save();
+    render();
+  }
+
+  // Mutual spouse pairing — also breaks the new spouse's previous pairing
+  // (if any) so no one ends up "married" to two people at once.
+  function linkSpouse(personId, spouseId) {
+    if (!spouseId) return;
+    const person = byId(personId);
+    const spouse = byId(spouseId);
+    if (!person || !spouse) return;
+    if (spouse.spouse && spouse.spouse !== personId) {
+      const other = byId(spouse.spouse);
+      if (other && other.spouse === spouseId) other.spouse = null;
+    }
+    person.spouse = spouseId;
+    spouse.spouse = personId;
+  }
+
+  function deletePerson(id) {
+    people = people.filter(p => p.id !== id);
+    for (const p of people) {
+      p.parents = p.parents.filter(pid => pid !== id);
+      if (p.spouse === id) p.spouse = null;
+    }
+    if (editingId === id) cancelEdit();
+    if (infoPersonId === id) hidePersonInfo(); // otherwise the popup lingers, showing a now-deleted person
+    save();
+    render();
+  }
+
+  function clearAll() {
+    if (!confirm(t("confirmClearAll"))) return;
+    people = [];
+    hidePersonInfo();
+    save();
+    render();
+  }
+
+  // --- Save to / load from file ------------------------------------------
+  // A JSON export of the exact data model (localStorage's contents) — the
+  // same file can be loaded back in here, or on another computer/browser.
+
+  function buildExportFile() {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = `family-tree-${stamp}.json`;
+    const json = JSON.stringify(people, null, 2);
+    return { filename, json };
+  }
+
+  // Prefers the native "Save As" picker (Chrome/Edge desktop) so the person
+  // chooses exactly where the file lands. Falls back to a plain download —
+  // which just drops it in the browser's default downloads folder — on
+  // browsers/platforms (Firefox, Safari, most mobile browsers) that don't
+  // support showSaveFilePicker.
+  async function exportToFile() {
+    const { filename, json } = buildExportFile();
+
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: "JSON", accept: { "application/json": [".json"] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // user cancelled the picker
+        // any other error (e.g. unsupported in this context) — fall through to the download below
+      }
+    }
+
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function importFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      let imported;
+      try {
+        imported = JSON.parse(reader.result);
+      } catch {
+        alert(t("alertInvalidJson"));
+        return;
+      }
+      if (!Array.isArray(imported) || !imported.every(p => p && typeof p.id === "string" && typeof p.name === "string")) {
+        alert(t("alertWrongFormat"));
+        return;
+      }
+      if (people.length > 0 && !confirm(t("confirmImport", { n: imported.length, m: people.length }))) {
+        return;
+      }
+      people = imported;
+      if (editingId) cancelEdit(); // also resets the form/submit button out of "editing" state
+      hidePersonInfo();
+      save();
+      render();
+    };
+    reader.onerror = () => alert(t("alertReadError"));
+    reader.readAsText(file);
+  }
+
+  // --- Generation layout -----------------------------------------------
+  // Assigns each person a generation number (0 = oldest known ancestors),
+  // groups people into "family units" (a person + their spouse, if any)
+  // per generation, orders those units under their parents from the row
+  // above, then lays out x/y pixel positions and the connector lines.
+
+  // Two hard rules, both honored at once: a parent is always EXACTLY one
+  // row above their own child, AND spouses always share a row. These can
+  // conflict — e.g. one spouse's own ancestry runs one generation deeper
+  // than the other's — but there's no contradiction in that: a root person
+  // (no parents of their own) isn't actually pinned to row 0, so when their
+  // descendant needs to match a deeper spouse, the fix is to push that
+  // WHOLE shallower ancestor line down by the difference, not just the one
+  // person. Every edge within that shifted line is still exactly 1 row,
+  // and now the couple matches too.
+  function computeGenerations() {
+    const gen = {};
+    for (const p of people) gen[p.id] = null;
+
+    function propagate() {
+      let changed = true;
+      let guard = 0;
+      while (changed && guard++ < people.length + 5) {
+        changed = false;
+        for (const p of people) {
+          if (p.parents.length > 0) {
+            const parentGens = p.parents.map(id => gen[id]).filter(g => g !== null && g !== undefined);
+            if (parentGens.length > 0) {
+              const target = Math.max(...parentGens) + 1;
+              if (gen[p.id] !== target) { gen[p.id] = target; changed = true; }
+              continue;
+            }
+          }
+          if (gen[p.id] === null) { gen[p.id] = 0; changed = true; }
+        }
+      }
+    }
+
+    function ancestorsOf(personId) {
+      const result = new Set();
+      const stack = [personId];
+      while (stack.length) {
+        const current = byId(stack.pop());
+        if (!current) continue;
+        for (const pid of current.parents) {
+          if (!result.has(pid)) { result.add(pid); stack.push(pid); }
+        }
+      }
+      return result;
+    }
+
+    // When a spouse pair ends up at different depths, push the shallower
+    // one's entire ancestor line down by the gap — re-propagating afterward
+    // cascades that shift through their other descendants too, which can
+    // in turn surface a new mismatch elsewhere, so this repeats until
+    // nothing moves (or the guard trips on malformed/cyclic data).
+    function stabilizeSpouseDepths() {
+      let mismatched = true;
+      let guard = 0;
+      while (mismatched && guard++ < people.length + 5) {
+        mismatched = false;
+        for (const p of people) {
+          const spouse = p.spouse && byId(p.spouse);
+          if (!spouse || gen[p.id] === gen[spouse.id]) continue;
+          const shallow = gen[p.id] < gen[spouse.id] ? p : spouse;
+          const deficit = Math.abs(gen[p.id] - gen[spouse.id]);
+          for (const id of [shallow.id, ...ancestorsOf(shallow.id)]) {
+            if (typeof gen[id] === "number") gen[id] += deficit;
+          }
+          mismatched = true;
+        }
+        if (mismatched) propagate();
+      }
+    }
+
+    propagate();
+    stabilizeSpouseDepths();
+
+    // A person with no known parents AND no spouse defaults to generation 0
+    // (nothing above placed them) — but if they're actually a co-parent of
+    // someone's children, that default is wrong: it strands them up among
+    // an unrelated top generation instead of near the family they actually
+    // belong to. Align them with the deepest co-parent they share a child
+    // with, then re-propagate/re-stabilize so everything below and around
+    // them settles back into the two rules above.
+    let adjusted = true;
+    let coParentGuard = 0;
+    while (adjusted && coParentGuard++ < people.length + 5) {
+      adjusted = false;
+      for (const p of people) {
+        if (p.parents.length > 0 || (p.spouse && byId(p.spouse))) continue;
+        const coParentGens = [];
+        for (const child of people) {
+          if (!child.parents.includes(p.id)) continue;
+          for (const coParentId of child.parents) {
+            if (coParentId !== p.id && typeof gen[coParentId] === "number") coParentGens.push(gen[coParentId]);
+          }
+        }
+        if (coParentGens.length === 0) continue;
+        const target = Math.max(...coParentGens);
+        if (gen[p.id] !== target) { gen[p.id] = target; adjusted = true; }
+      }
+      if (adjusted) {
+        propagate();
+        stabilizeSpouseDepths();
+      }
+    }
+
+    // Absolute safety net: cap every generation at people.length. Nothing
+    // in a valid (acyclic) tree can legitimately need more rows than there
+    // are people, so if cyclic/malformed data slipped past the guards above
+    // and pushed something higher, this just clamps the visual fallout
+    // instead of producing a tree too tall to render sanely.
+    for (const p of people) {
+      if (typeof gen[p.id] === "number" && gen[p.id] > people.length) gen[p.id] = people.length;
+    }
+    return gen;
+  }
+
+  function buildFamilyUnits(gen) {
+    const seen = new Set();
+    const units = []; // { people: [person, spouse?], gen }
+    for (const p of people) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      const members = [p];
+      // Only bundle a spouse into the same visual unit when they're
+      // actually on the same row — generations are no longer forced to
+      // match, so a spouse whose own line is deeper/shallower gets their
+      // own unit on their own row instead (see computeGenerations).
+      if (p.spouse && byId(p.spouse) && !seen.has(p.spouse) && gen[p.spouse] === gen[p.id]) {
+        members.push(byId(p.spouse));
+        seen.add(p.spouse);
+      }
+      units.push({ members, gen: gen[p.id] });
+    }
+    return units;
+  }
+
+  function layout() {
+    const gen = computeGenerations();
+    const units = buildFamilyUnits(gen);
+    const maxGen = units.reduce((m, u) => Math.max(m, u.gen), 0);
+
+    const rows = [];
+    for (let g = 0; g <= maxGen; g++) rows.push(units.filter(u => u.gen === g));
+
+    // Order each row by the average x of the unit's parents in the row above.
+    const unitX = new Map(); // unit -> center x
+    const personX = new Map(); // person id -> center x
+
+    rows.forEach((row, g) => {
+      if (g === 0) {
+        row.sort((a, b) => people.indexOf(a.members[0]) - people.indexOf(b.members[0]));
+      } else {
+        row.sort((a, b) => {
+          const ax = avgParentX(a, personX), bx = avgParentX(b, personX);
+          if (ax === null && bx === null) return people.indexOf(a.members[0]) - people.indexOf(b.members[0]);
+          if (ax === null) return 1;
+          if (bx === null) return -1;
+          return ax - bx;
+        });
+      }
+
+      pullCoParentsAdjacent(row);
+      pullInLawsAdjacent(row);
+      faceSiblingPairsInward(row);
+
+      let cursor = 0;
+      for (const unit of row) {
+        const width = unit.members.length === 2 ? CARD_W * 2 + SPOUSE_GAP : CARD_W;
+        const centerX = cursor + width / 2;
+        unitX.set(unit, centerX);
+        unit.members.forEach((m, i) => {
+          personX.set(m.id, unit.members.length === 2
+            ? centerX + (i === 0 ? -(CARD_W + SPOUSE_GAP) / 2 : (CARD_W + SPOUSE_GAP) / 2)
+            : centerX);
+        });
+        cursor += width + UNIT_GAP;
+      }
+    });
+
+    // A unit with no ancestry of its own (e.g. someone added only as a
+    // co-parent, no family entered for them) sorts wherever avgParentX(=null)
+    // happens to leave it — often the far end of the row. When their actual
+    // co-parent is in this same row, splice them to sit right next to that
+    // co-parent's unit instead, so the connector down to their shared child
+    // is a short line between neighbors rather than a long one stretching
+    // across everyone in between.
+    function pullCoParentsAdjacent(row) {
+      for (let i = row.length - 1; i >= 0; i--) {
+        const unit = row[i];
+        if (unit.members.some(m => m.parents.length > 0)) continue;
+
+        let partnerUnit = null;
+        for (const m of unit.members) {
+          for (const child of people) {
+            if (!child.parents.includes(m.id)) continue;
+            for (const coParentId of child.parents) {
+              if (coParentId === m.id) continue;
+              const found = row.find(u => u !== unit && u.members.some(mm => mm.id === coParentId));
+              if (found) { partnerUnit = found; break; }
+            }
+            if (partnerUnit) break;
+          }
+          if (partnerUnit) break;
+        }
+        if (!partnerUnit) continue;
+
+        row.splice(i, 1);
+        const partnerIndex = row.indexOf(partnerUnit);
+        row.splice(partnerIndex + 1, 0, unit);
+      }
+    }
+
+    // When someone in this row has a child who married into another
+    // family, pull that other family's unit (the in-laws — the spouse's
+    // own parents) up next to this one. Otherwise two families connected
+    // only by a marriage one row down can land on opposite sides of an
+    // unrelated third unit, with no visual hint they're related at all.
+    function pullInLawsAdjacent(row) {
+      for (let i = row.length - 1; i >= 0; i--) {
+        const unit = row[i];
+        let partnerUnit = null;
+        outer:
+        for (const m of unit.members) {
+          for (const child of people) {
+            if (!child.parents.includes(m.id) || !child.spouse) continue;
+            const childSpouse = byId(child.spouse);
+            if (!childSpouse) continue;
+            for (const inLawId of childSpouse.parents) {
+              const found = row.find(u => u !== unit && u.members.some(mm => mm.id === inLawId));
+              if (found) { partnerUnit = found; break outer; }
+            }
+          }
+        }
+        if (!partnerUnit) continue;
+
+        const unitIndex = row.indexOf(unit);
+        const partnerIndex2 = row.indexOf(partnerUnit);
+        if (Math.abs(unitIndex - partnerIndex2) === 1) continue; // already adjacent
+        row.splice(unitIndex, 1);
+        row.splice(row.indexOf(partnerUnit) + 1, 0, unit);
+      }
+    }
+
+    // When two units end up next to each other and each is a sibling +
+    // their spouse — and those two siblings are their parents' ONLY two
+    // children — flip each unit so the siblings face each other in the
+    // middle and their spouses sit on the outside, instead of a spouse
+    // ending up sandwiched between the two blood siblings.
+    function faceSiblingPairsInward(row) {
+      for (let i = 0; i < row.length - 1; i++) {
+        const unitA = row[i], unitB = row[i + 1];
+        if (unitA.members.length !== 2 || unitB.members.length !== 2) continue;
+
+        outer:
+        for (const a of unitA.members) {
+          if (a.parents.length === 0) continue;
+          const aKey = [...a.parents].sort().join("|");
+          for (const b of unitB.members) {
+            if (b.parents.length === 0 || a === b) continue;
+            const bKey = [...b.parents].sort().join("|");
+            if (aKey !== bKey) continue;
+            const siblingCount = people.filter(c => [...c.parents].sort().join("|") === aKey).length;
+            if (siblingCount !== 2) continue;
+            if (unitA.members[1] !== a) unitA.members.reverse();
+            if (unitB.members[0] !== b) unitB.members.reverse();
+            break outer;
+          }
+        }
+      }
+    }
+
+    function avgParentX(unit, personX) {
+      const parentIds = new Set();
+      for (const m of unit.members) for (const pid of m.parents) parentIds.add(pid);
+      let xs = [...parentIds].map(id => personX.get(id)).filter(x => x !== undefined);
+      if (xs.length === 0) {
+        // No parents of their own to anchor on — e.g. someone added only as
+        // a co-parent, with no ancestry entered for them. Sort them next to
+        // whoever they actually share a child with instead, so they land
+        // beside that person rather than drifting to the end of the row
+        // (which otherwise sends their connector line stretching sideways
+        // across unrelated cards in between).
+        const coParentIds = new Set();
+        for (const m of unit.members) {
+          for (const child of people) {
+            if (!child.parents.includes(m.id)) continue;
+            for (const cid of child.parents) if (cid !== m.id) coParentIds.add(cid);
+          }
+        }
+        xs = [...coParentIds].map(id => personX.get(id)).filter(x => x !== undefined);
+      }
+      return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+    }
+
+    const rowWidths = rows.map(row => {
+      let w = 0;
+      for (const u of row) w += (u.members.length === 2 ? CARD_W * 2 + SPOUSE_GAP : CARD_W) + UNIT_GAP;
+      return Math.max(w - UNIT_GAP, 0); // drop the trailing gap after the last unit — that's not real content width
+    });
+    const totalWidth = Math.max(...rowWidths, 400);
+
+    const positions = {};
+    people.forEach(p => {
+      const x = personX.get(p.id) ?? 0;
+      const y = gen[p.id] * ROW_H + 20;
+      positions[p.id] = { x, y };
+    });
+
+    return { positions, width: totalWidth, height: (maxGen + 1) * ROW_H + CARD_H + 20, rowWidths };
+  }
+
+  // --- Rendering ---------------------------------------------------------
+
+  function render() {
+    refreshDropdowns();
+
+    const wrap = document.getElementById("treeInner");
+    const emptyHint = document.getElementById("emptyHint");
+    wrap.innerHTML = "";
+
+    if (people.length === 0) {
+      emptyHint.style.display = "block";
+      wrap.style.width = "0px";
+      wrap.style.height = "0px";
+      document.getElementById("treeZoomSpacer").style.width = "0px";
+      document.getElementById("treeZoomSpacer").style.height = "0px";
+      return;
+    }
+    emptyHint.style.display = "none";
+
+    const { positions, width, height, rowWidths } = layout();
+
+    // Center each generation row independently within the visible area,
+    // rather than centering the tree as one block — a narrow row (e.g. the
+    // oldest generation with just two people) sits centered under whatever
+    // is above/below it instead of trailing off to one side because some
+    // other row happens to be wider. Divide by zoom first — clientWidth is
+    // the on-screen (already-scaled) viewport, but this math all happens in
+    // the tree's own unscaled coordinate space.
+    const availableWidth = (document.getElementById("treeWrap").clientWidth / zoomLevel) || width;
+    let maxRight = 0;
+    for (const id in positions) {
+      const pos = positions[id];
+      const g = Math.round((pos.y - 20) / ROW_H);
+      const rowOffset = Math.max(0, Math.round((availableWidth - (rowWidths[g] || 0)) / 2));
+      pos.x += rowOffset;
+      maxRight = Math.max(maxRight, pos.x + CARD_W / 2);
+    }
+
+    const wrapWidth = Math.max(maxRight, availableWidth);
+    wrap.style.width = wrapWidth + "px";
+    wrap.style.height = height + "px";
+    lastLayoutWidth = wrapWidth;
+    lastLayoutHeight = height;
+
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    // Must match wrap's width, not the pre-centering layout width — an SVG
+    // clips anything past its own width/height by default, and centering
+    // shifts every card (and line) right by offsetX without widening the
+    // original layout width, so a narrower SVG here silently clips lines to
+    // cards on the right side of a centered tree.
+    svg.setAttribute("width", wrapWidth);
+    svg.setAttribute("height", height);
+    svg.style.position = "absolute";
+    svg.style.left = "0";
+    svg.style.top = "0";
+    svg.style.pointerEvents = "none";
+
+    // peopleIds tags the line with who it connects — read back later to
+    // highlight just one person's own connections on hover/tap instead of
+    // fixed per-family colors, which run out of visually distinct options
+    // once a tree has more than a handful of family branches.
+    function line(x1, y1, x2, y2, color, peopleIds) {
+      const el = document.createElementNS(svgNS, "line");
+      el.setAttribute("x1", x1); el.setAttribute("y1", y1);
+      el.setAttribute("x2", x2); el.setAttribute("y2", y2);
+      el.setAttribute("stroke", color);
+      el.setAttribute("stroke-width", "1.6");
+      el.style.transition = "opacity 0.15s ease";
+      if (peopleIds) el.setAttribute("data-people", peopleIds.join(" "));
+      svg.appendChild(el);
+    }
+
+    // Spouse connectors.
+    const drawnSpousePairs = new Set();
+    for (const p of people) {
+      if (p.spouse && byId(p.spouse)) {
+        const key = [p.id, p.spouse].sort().join("|");
+        if (drawnSpousePairs.has(key)) continue;
+        drawnSpousePairs.add(key);
+        const a = positions[p.id], b = positions[p.spouse];
+        const spouseColor = theme === "light" ? "rgba(179,114,28,0.55)" : "rgba(232,176,75,0.5)";
+        line(a.x, a.y + CARD_H / 2, b.x, b.y + CARD_H / 2, spouseColor, [p.id, p.spouse]);
+      }
+    }
+
+    // Parent-child connectors. Each parent gets its own stub dropping from
+    // the bottom of its card down to a shared horizontal bus — so with two
+    // parents the line visibly comes from both of them, and with only one
+    // parent specified it's just a single line from that one. Each distinct
+    // parent-set gets its own stable color (see familyLineColor) so two
+    // nearby/crossing family lines stay visually distinguishable even
+    // without hovering.
+    for (const p of people) {
+      if (p.parents.length === 0) continue;
+      const validParents = p.parents.filter(id => positions[id]);
+      if (validParents.length === 0) continue;
+      const parentXs = validParents.map(id => positions[id].x);
+      const parentBottoms = validParents.map(id => positions[id].y + CARD_H);
+      const busY = Math.max(...parentBottoms) + 14;
+      const originX = parentXs.reduce((a, b) => a + b, 0) / parentXs.length;
+      const connectedIds = [p.id, ...validParents];
+      const familyColor = familyLineColor(validParents);
+
+      // Each parent's stub starts at ITS OWN card bottom, not a shared one —
+      // parents can sit in different generations (e.g. one has ancestors of
+      // their own and one doesn't), so their card bottoms aren't always at
+      // the same y. Using one shared y here left the shallower parent's line
+      // floating below their card instead of touching it.
+      parentXs.forEach((x, i) => {
+        line(x, parentBottoms[i], x, busY, familyColor, connectedIds);
+      });
+      const minX = Math.min(...parentXs), maxX = Math.max(...parentXs);
+      if (minX !== maxX) line(minX, busY, maxX, busY, familyColor, connectedIds);
+
+      const childPos = positions[p.id];
+      const midY = originX === childPos.x ? busY : (busY + childPos.y) / 2;
+      line(originX, busY, originX, midY, familyColor, connectedIds);
+      line(originX, midY, childPos.x, midY, familyColor, connectedIds);
+      line(childPos.x, midY, childPos.x, childPos.y, familyColor, connectedIds);
+    }
+
+    wrap.appendChild(svg);
+
+    for (const p of people) {
+      const pos = positions[p.id];
+      const el = document.createElement("div");
+      el.className = "person" + (p.id === editingId ? " editing" : "");
+      el.style.left = (pos.x - CARD_W / 2) + "px";
+      el.style.top = pos.y + "px";
+      const bornText = formatDate(p.birth) || "—";
+      const deathText = formatDate(p.death);
+      const dates = deathText ? `${bornText} – ${deathText}` : bornText;
+      const age = calculateAge(p.birth, p.death);
+      const ageLabel = age === null ? "" : t(p.death ? "agedX" : "ageX", { age });
+      const rawFocus = p.photoFocus || { x: 50, y: 50 };
+      const clampPct = (v) => Number.isFinite(+v) ? Math.max(0, Math.min(100, +v)) : 50;
+      const focus = { x: clampPct(rawFocus.x), y: clampPct(rawFocus.y) };
+      const photoHtml = p.photo
+        ? `<img class="photo" src="${escapeHtml(p.photo)}" style="object-position:${focus.x}% ${focus.y}%" alt="">`
+        : `<div class="photo-placeholder">${escapeHtml((p.name.trim().charAt(0) || "?").toUpperCase())}</div>`;
+      const childCount = people.filter(c => c.parents.includes(p.id)).length;
+      const childrenLabel = childCount === 0 ? "" : t(childCount === 1 ? "oneChild" : "manyChildren", { n: childCount });
+      el.innerHTML = `
+        ${photoHtml}
+        <div class="name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
+        ${p.origin ? `<div class="origin" title="${escapeHtml(p.origin)}">${escapeHtml(p.origin)}</div>` : ""}
+        <div class="dates">${escapeHtml(dates)}</div>
+        ${ageLabel ? `<div class="age">${escapeHtml(ageLabel)}</div>` : ""}
+        <div class="edit-hint">${escapeHtml(t("editHint"))}</div>
+        ${childrenLabel ? `<div class="children-count">${escapeHtml(childrenLabel)}</div>` : ""}
+        <button class="del" title="${escapeHtml(t("removePerson", { name: p.name }))}" type="button">×</button>
+      `;
+      el.querySelector(".del").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (confirm(t("confirmDelete", { name: p.name }))) deletePerson(p.id);
+      });
+
+      // Desktop: hovering reveals the full info popup passively, and a
+      // click still jumps straight into editing. Touch devices have no
+      // hover, so a tap shows the info popup instead (with its own Edit
+      // button inside it) rather than opening editing on a single tap.
+      if (hoverCapable()) {
+        el.addEventListener("mouseenter", () => { cancelHidePersonInfo(); showPersonInfo(p.id, el); });
+        el.addEventListener("mouseleave", scheduleHidePersonInfo);
+        el.addEventListener("click", () => startEdit(p.id));
+      } else {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          showPersonInfo(p.id, el);
+        });
+      }
+      wrap.appendChild(el);
+    }
+
+    applyZoom();
+  }
+
+  // --- Zoom controls -------------------------------------------------
+  // A CSS transform on #treeInner, visually scaling it, while
+  // #treeZoomSpacer is sized to match (width/height × zoom) so #treeWrap's
+  // own scrolling — which only knows about unscaled layout sizes — still
+  // reaches exactly the scaled content's edges instead of clipping it (zoom
+  // in) or leaving dead scroll space (zoom out).
+
+  let zoomLevel = 1;
+  let lastLayoutWidth = 0, lastLayoutHeight = 0;
+  const ZOOM_MIN = 0.15, ZOOM_MAX = 3;
+
+  function applyZoom() {
+    const spacer = document.getElementById("treeZoomSpacer");
+    spacer.style.width = (lastLayoutWidth * zoomLevel) + "px";
+    spacer.style.height = (lastLayoutHeight * zoomLevel) + "px";
+    document.getElementById("treeInner").style.transform = `scale(${zoomLevel})`;
+  }
+
+  function setZoom(next) {
+    zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
+    applyZoom();
+  }
+
+  document.getElementById("zoomInBtn").addEventListener("click", () => setZoom(zoomLevel * 1.25));
+  document.getElementById("zoomOutBtn").addEventListener("click", () => setZoom(zoomLevel / 1.25));
+
+  document.getElementById("zoomFitBtn").addEventListener("click", () => {
+    const treeWrap = document.getElementById("treeWrap");
+    if (!lastLayoutWidth || !lastLayoutHeight) { setZoom(1); return; }
+    const fitScale = Math.min(
+      treeWrap.clientWidth / lastLayoutWidth,
+      treeWrap.clientHeight / lastLayoutHeight,
+      1 // never zoom past 100% just because the tree happens to be small
+    );
+    // Toggle: pressing it again while already at the fitted scale goes back
+    // to 100% instead of recomputing the same fit over and over.
+    const alreadyFitted = Math.abs(zoomLevel - fitScale) < 0.01;
+    setZoom(alreadyFitted ? 1 : fitScale);
+    treeWrap.scrollTo({ top: 0, left: 0 });
+    render(); // re-centers rows for the new effective available width at this zoom
+  });
+
+  // Ctrl/Cmd+wheel zooms (matches the browser's own page-zoom gesture)
+  // instead of scrolling, so a trackpad pinch or Ctrl+scroll over the tree
+  // does the expected thing rather than scrolling the page underneath it.
+  document.getElementById("treeWrap").addEventListener("wheel", (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    setZoom(zoomLevel * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+  }, { passive: false });
+
+  // --- Person info popup --------------------------------------------
+  // Shows the details that don't fit on the card itself (full name if
+  // truncated, parents, spouse) — on hover for mouse/trackpad users, or on
+  // tap for touch devices, which have no hover to reveal it passively.
+
+  function hoverCapable() {
+    return window.matchMedia && window.matchMedia("(hover: hover)").matches;
+  }
+
+  let infoPersonId = null;
+
+  // Dims every connector line except the ones touching this person (tagged
+  // with their id via `data-people` when drawn — see line() in render()),
+  // so their own connections stand out without needing a fixed color per
+  // family, which runs out of visually distinct colors on a large tree.
+  function highlightPersonConnections(id) {
+    const svg = document.querySelector("#treeInner svg");
+    if (!svg) return;
+    svg.querySelectorAll("line").forEach((l) => {
+      const ids = (l.getAttribute("data-people") || "").split(" ");
+      l.style.opacity = ids.includes(id) ? "1" : "0.15";
+    });
+  }
+
+  function clearLineHighlight() {
+    const svg = document.querySelector("#treeInner svg");
+    if (!svg) return;
+    svg.querySelectorAll("line").forEach((l) => { l.style.opacity = ""; });
+  }
+
+  function showPersonInfo(id, anchorEl) {
+    const person = byId(id);
+    if (!person) return;
+    infoPersonId = id;
+    highlightPersonConnections(id);
+
+    document.getElementById("infoName").textContent = person.name;
+
+    document.getElementById("infoOrigin").hidden = !person.origin;
+    document.getElementById("infoOriginValue").textContent = person.origin || "";
+
+    const bornText = formatDate(person.birth);
+    document.getElementById("infoBorn").hidden = !bornText;
+    document.getElementById("infoBornValue").textContent = bornText;
+
+    const diedText = formatDate(person.death);
+    document.getElementById("infoDied").hidden = !diedText;
+    document.getElementById("infoDiedValue").textContent = diedText;
+
+    const age = calculateAge(person.birth, person.death);
+    document.getElementById("infoAge").hidden = age === null;
+    document.getElementById("infoAgeLabelText").textContent = t(person.death ? "infoAgeAtDeathLabel" : "infoAgeLabel");
+    document.getElementById("infoAgeValue").textContent = age === null ? "" : (person.death ? t("livedYears", { age }) : String(age));
+
+    const parentNames = person.parents.map(pid => byId(pid)?.name).filter(Boolean);
+    document.getElementById("infoParents").hidden = parentNames.length === 0;
+    document.getElementById("infoParentsValue").textContent = parentNames.join(", ");
+
+    const spouseName = person.spouse ? byId(person.spouse)?.name : null;
+    document.getElementById("infoSpouse").hidden = !spouseName;
+    document.getElementById("infoSpouseValue").textContent = spouseName || "";
+
+    const children = people.filter(c => c.parents.includes(person.id));
+    document.getElementById("infoChildren").hidden = children.length === 0;
+    document.getElementById("infoChildrenValue").textContent = children.length
+      ? `${children.length} — ${children.map(c => c.name).join(", ")}`
+      : "";
+
+    const popup = document.getElementById("personInfoPopup");
+    popup.hidden = false; // unhide first so offsetHeight below reflects real content
+    const rect = anchorEl.getBoundingClientRect();
+    const popupWidth = Math.min(220, document.documentElement.clientWidth - 16);
+    const margin = 8;
+    let left = rect.left + window.scrollX;
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - popupWidth - margin;
+    left = Math.max(window.scrollX + margin, Math.min(left, maxLeft));
+    popup.style.left = left + "px";
+
+    // Always show above the card so the tree structure (children/descendants)
+    // below stays visible; fall back to below only when there isn't room above.
+    const popupHeight = popup.offsetHeight;
+    const top = (rect.top > popupHeight + margin)
+      ? rect.top + window.scrollY - popupHeight - 4
+      : rect.bottom + window.scrollY + 4;
+    popup.style.top = top + "px";
+  }
+
+  function hidePersonInfo() {
+    infoPersonId = null;
+    document.getElementById("personInfoPopup").hidden = true;
+    clearLineHighlight();
+  }
+
+  // A brief grace period on mouseleave — without it, moving the cursor from
+  // the card to the popup (two separate elements, with a gap between them)
+  // fires the card's mouseleave and hides the popup before the cursor ever
+  // reaches it, making the Edit button inside unreachable by mouse.
+  let infoHideTimer = null;
+  function scheduleHidePersonInfo() {
+    clearTimeout(infoHideTimer);
+    infoHideTimer = setTimeout(hidePersonInfo, 200);
+  }
+  function cancelHidePersonInfo() {
+    clearTimeout(infoHideTimer);
+  }
+
+  document.getElementById("infoEditBtn").addEventListener("click", () => {
+    if (infoPersonId) startEdit(infoPersonId);
+    hidePersonInfo();
+  });
+  document.getElementById("personInfoPopup").addEventListener("click", (e) => e.stopPropagation());
+  document.getElementById("personInfoPopup").addEventListener("mouseenter", cancelHidePersonInfo);
+  document.getElementById("personInfoPopup").addEventListener("mouseleave", scheduleHidePersonInfo);
+
+  document.addEventListener("click", (e) => {
+    const popup = document.getElementById("personInfoPopup");
+    if (!popup.hidden && !popup.contains(e.target) && !e.target.closest(".person")) {
+      hidePersonInfo();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.getElementById("personInfoPopup").hidden) hidePersonInfo();
+  });
+
+  // All of a person's descendants (children, grandchildren, ...) — used to
+  // keep the Parent dropdowns from offering a choice that would make that
+  // person their own ancestor (a cycle the generation-layout math can't
+  // meaningfully lay out).
+  function descendantsOf(personId) {
+    const result = new Set();
+    const stack = [personId];
+    while (stack.length) {
+      const current = stack.pop();
+      for (const child of people) {
+        if (child.parents.includes(current) && !result.has(child.id)) {
+          result.add(child.id);
+          stack.push(child.id);
+        }
+      }
+    }
+    return result;
+  }
+
+  function refreshDropdowns() {
+    const blockedAsParent = editingId ? descendantsOf(editingId) : new Set();
+    for (const selectId of ["fParent1", "fParent2", "fSpouse"]) {
+      const select = document.getElementById(selectId);
+      const current = select.value;
+      const isParentField = selectId === "fParent1" || selectId === "fParent2";
+      select.innerHTML = `<option value="">${escapeHtml(t("none"))}</option>`;
+      for (const p of people) {
+        if (p.id === editingId) continue; // a person can't be their own parent/spouse
+        if (isParentField && blockedAsParent.has(p.id)) continue; // would make editingId their own ancestor
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        select.appendChild(opt);
+      }
+      if (people.some(p => p.id === current) && !(isParentField && blockedAsParent.has(current))) select.value = current;
+    }
+  }
+
+  // Escapes for safe use in BOTH HTML text content and quoted attribute
+  // values (e.g. title="${escapeHtml(name)}") — a name/value containing a
+  // literal " would otherwise break out of the attribute and let arbitrary
+  // attributes (onmouseover=, etc.) be injected via imported/edited data.
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[ch]));
+  }
+
+  // A stable color per distinct parent-set, derived from a hash of their
+  // ids (not draw order), so the same family always gets the same color
+  // across re-renders/reloads — two different families' connector lines
+  // stay visually distinguishable at a glance even when they run close
+  // together or cross, without having to hover to tell them apart.
+  function familyLineColor(parentIds) {
+    const key = [...parentIds].sort().join("|");
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    const hue = hash % 360;
+    return `hsl(${hue}, ${theme === "light" ? 48 : 55}%, ${theme === "light" ? 38 : 58}%)`;
+  }
+
+  // Dates are stored as "YYYY-MM-DD", or "YYYY-MM"/"YYYY" alone when the day
+  // (or day+month) is unknown — genealogy often only has a birth year.
+  // Shown on cards as "12 May 1958", "May 1958", or just "1958".
+  function formatDate(value) {
+    if (!value) return "";
+    const months = t("months");
+    let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (m) return `${parseInt(m[3], 10)} ${months[parseInt(m[2], 10) - 1]} ${m[1]}`;
+    m = /^(\d{4})-(\d{2})$/.exec(value);
+    if (m) return `${months[parseInt(m[2], 10) - 1]} ${m[1]}`;
+    m = /^(\d{4})$/.exec(value);
+    if (m) return m[1];
+    return value;
+  }
+
+  function parseDateParts(value) {
+    if (!value) return null;
+    let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (m) return { year: +m[1], month: +m[2], day: +m[3] };
+    m = /^(\d{4})-(\d{2})$/.exec(value);
+    if (m) return { year: +m[1], month: +m[2], day: null };
+    m = /^(\d{4})$/.exec(value);
+    if (m) return { year: +m[1], month: null, day: null };
+    return null;
+  }
+
+  // Age in whole years, at death if known, otherwise as of today. Falls
+  // back to a year-only estimate when the birth (or reference) date is
+  // missing its month/day — common for older ancestors.
+  function calculateAge(birthValue, deathValue) {
+    const birth = parseDateParts(birthValue);
+    if (!birth) return null;
+
+    let end;
+    if (deathValue) {
+      end = parseDateParts(deathValue);
+      if (!end) return null;
+    } else {
+      const now = new Date();
+      end = { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+    }
+
+    let age = end.year - birth.year;
+    if (birth.month && end.month) {
+      const birthdayNotYetReached = end.month < birth.month ||
+        (end.month === birth.month && birth.day && end.day && end.day < birth.day);
+      if (birthdayNotYetReached) age--;
+    }
+    return age >= 0 ? age : null;
+  }
+
+  // --- Calendar popup ----------------------------------------------------
+  // A small custom day-grid picker (Day-Month-Year header, always in that
+  // order) shared by both the Born and Died fields — opened against
+  // whichever one was clicked, closed on a pick, outside click, or Escape.
+
+  const popup = document.getElementById("datePopup");
+  const dpMonthSelect = document.getElementById("dpMonth");
+  const dpYearInput = document.getElementById("dpYear");
+  const dpGrid = document.getElementById("dpGrid");
+
+  let activeField = null; // "birth" | "death"
+  let viewYear, viewMonth; // 1-based month
+
+  function fieldIds(field) {
+    return field === "birth"
+      ? { display: "fBirthInput", hidden: "fBirthValue" }
+      : { display: "fDeathInput", hidden: "fDeathValue" };
+  }
+
+  function openPopup(field, anchor) {
+    activeField = field;
+    const ids = fieldIds(field);
+    const parsed = parseDateParts(document.getElementById(ids.hidden).value);
+    const now = new Date();
+    viewYear = parsed ? parsed.year : now.getFullYear();
+    viewMonth = parsed && parsed.month ? parsed.month : now.getMonth() + 1;
+
+    const rect = anchor.getBoundingClientRect();
+    const popupWidth = Math.min(260, document.documentElement.clientWidth - 16); // matches .date-popup's CSS width/max-width
+    const margin = 8;
+    let left = rect.left + window.scrollX;
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - popupWidth - margin;
+    left = Math.max(window.scrollX + margin, Math.min(left, maxLeft));
+    popup.style.left = left + "px";
+    popup.style.top = (rect.bottom + window.scrollY + 4) + "px";
+    popup.hidden = false;
+    renderPopup(parsed);
+  }
+
+  function closePopup() {
+    popup.hidden = true;
+    activeField = null;
+  }
+
+  function renderPopup(selected) {
+    dpMonthSelect.value = String(viewMonth);
+    dpYearInput.value = String(viewYear);
+
+    dpGrid.innerHTML = "";
+    const firstOfMonth = new Date(viewYear, viewMonth - 1, 1);
+    const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+    // Monday-first weekday index (0=Mon .. 6=Sun) for the 1st of the month.
+    const leadBlanks = (firstOfMonth.getDay() + 6) % 7;
+    const daysInPrevMonth = new Date(viewYear, viewMonth - 1, 0).getDate();
+
+    const today = new Date();
+    const cells = [];
+    for (let i = leadBlanks; i > 0; i--) cells.push({ day: daysInPrevMonth - i + 1, outside: true });
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, outside: false });
+    while (cells.length % 7 !== 0 || cells.length < 42) {
+      const nextIdx = cells.length - (leadBlanks + daysInMonth) + 1;
+      cells.push({ day: nextIdx, outside: true });
+      if (cells.length >= 42) break;
+    }
+
+    for (const cell of cells) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = cell.day;
+      if (cell.outside) btn.classList.add("dp-outside");
+      const isToday = !cell.outside && viewYear === today.getFullYear() && viewMonth === today.getMonth() + 1 && cell.day === today.getDate();
+      if (isToday) btn.classList.add("dp-today");
+      const isSelected = selected && !cell.outside && selected.day === cell.day && selected.month === viewMonth && selected.year === viewYear;
+      if (isSelected) btn.classList.add("dp-selected");
+      if (!cell.outside) {
+        btn.addEventListener("click", () => pickDay(cell.day));
+      } else {
+        btn.disabled = true;
+      }
+      dpGrid.appendChild(btn);
+    }
+  }
+
+  function pickDay(day) {
+    const ids = fieldIds(activeField);
+    const iso = `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    document.getElementById(ids.hidden).value = iso;
+    document.getElementById(ids.display).value = formatDate(iso);
+    closePopup();
+  }
+
+  document.getElementById("dpPrev").addEventListener("click", () => {
+    viewMonth--;
+    if (viewMonth < 1) { viewMonth = 12; viewYear--; }
+    renderPopup(parseDateParts(document.getElementById(fieldIds(activeField).hidden).value));
+  });
+  document.getElementById("dpNext").addEventListener("click", () => {
+    viewMonth++;
+    if (viewMonth > 12) { viewMonth = 1; viewYear++; }
+    renderPopup(parseDateParts(document.getElementById(fieldIds(activeField).hidden).value));
+  });
+  dpMonthSelect.addEventListener("change", () => {
+    viewMonth = parseInt(dpMonthSelect.value, 10);
+    renderPopup(parseDateParts(document.getElementById(fieldIds(activeField).hidden).value));
+  });
+  dpYearInput.addEventListener("change", () => {
+    if (dpYearInput.value) viewYear = parseInt(dpYearInput.value, 10);
+    renderPopup(parseDateParts(document.getElementById(fieldIds(activeField).hidden).value));
+  });
+
+  document.getElementById("dpYearOnly").addEventListener("click", () => {
+    if (!dpYearInput.value) return;
+    const ids = fieldIds(activeField);
+    const year = dpYearInput.value;
+    document.getElementById(ids.hidden).value = year;
+    document.getElementById(ids.display).value = formatDate(year);
+    closePopup();
+  });
+  document.getElementById("dpClear").addEventListener("click", () => {
+    const ids = fieldIds(activeField);
+    document.getElementById(ids.hidden).value = "";
+    document.getElementById(ids.display).value = "";
+    closePopup();
+  });
+
+  document.getElementById("fBirthInput").addEventListener("click", (e) => openPopup("birth", e.target));
+  document.getElementById("fDeathInput").addEventListener("click", (e) => openPopup("death", e.target));
+
+  document.addEventListener("click", (e) => {
+    if (!popup.hidden && !popup.contains(e.target) && e.target.id !== "fBirthInput" && e.target.id !== "fDeathInput") {
+      closePopup();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !popup.hidden) closePopup();
+  });
+
+  // Downscales a chosen photo to a small square-ish thumbnail (longest side
+  // capped at PHOTO_MAX_SIZE) and returns it as a JPEG data URL — keeps
+  // localStorage usage reasonable even with several photos in the tree.
+  function resizeImage(file, maxSize) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > height) {
+            if (width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize; }
+          } else {
+            if (height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // --- Photo preview & face-centering ------------------------------------
+  // The resized thumbnail is shown full-size in the form so the person can
+  // click on it to pick which point stays centered when it's later cropped
+  // into the small round card avatar (object-position, applied in render()).
+
+  let currentPhotoDataUrl = null;
+  let currentPhotoFocus = { x: 50, y: 50 };
+
+  function setPhotoFocusMarker(x, y) {
+    const marker = document.getElementById("photoFocusMarker");
+    marker.style.left = x + "%";
+    marker.style.top = y + "%";
+  }
+
+  function showPhotoPreview(dataUrl, focus) {
+    currentPhotoDataUrl = dataUrl;
+    currentPhotoFocus = focus || { x: 50, y: 50 };
+    document.getElementById("photoPreviewImg").src = dataUrl;
+    setPhotoFocusMarker(currentPhotoFocus.x, currentPhotoFocus.y);
+    document.getElementById("photoPreviewWrap").hidden = false;
+  }
+
+  function hidePhotoPreview() {
+    currentPhotoDataUrl = null;
+    currentPhotoFocus = { x: 50, y: 50 };
+    document.getElementById("photoPreviewImg").src = "";
+    document.getElementById("photoPreviewWrap").hidden = true;
+  }
+
+  document.getElementById("photoPreviewImg").addEventListener("click", (e) => {
+    const rect = e.target.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+    const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+    currentPhotoFocus = { x, y };
+    setPhotoFocusMarker(x, y);
+  });
+
+  // --- Edit mode -----------------------------------------------------
+  // Clicking a card loads that person's details back into the same form
+  // used to add people; submitting then updates them in place instead of
+  // creating a new entry.
+
+  function startEdit(id) {
+    const person = byId(id);
+    if (!person) return;
+    editingId = id;
+
+    document.getElementById("fName").value = person.name;
+    document.getElementById("fOrigin").value = person.origin || "";
+    document.getElementById("fBirthValue").value = person.birth || "";
+    document.getElementById("fBirthInput").value = formatDate(person.birth);
+    document.getElementById("fDeathValue").value = person.death || "";
+    document.getElementById("fDeathInput").value = formatDate(person.death);
+    document.getElementById("fPhoto").value = ""; // can't pre-fill a file input — leaving it blank keeps the existing photo
+    if (person.photo) showPhotoPreview(person.photo, person.photoFocus);
+    else hidePhotoPreview();
+
+    document.getElementById("fParent1").value = person.parents[0] || "";
+    document.getElementById("fParent2").value = person.parents[1] || "";
+    document.getElementById("fSpouse").value = person.spouse || "";
+
+    document.getElementById("submitBtn").textContent = t("saveChanges");
+    document.getElementById("cancelEditBtn").hidden = false;
+
+    render(); // refreshes dropdowns (excluding this person) and highlights their card
+    document.getElementById("addForm").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("fName").focus();
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    document.getElementById("addForm").reset();
+    hidePhotoPreview();
+    document.getElementById("submitBtn").textContent = t("addPerson");
+    document.getElementById("cancelEditBtn").hidden = true;
+    render();
+  }
+
+  document.getElementById("cancelEditBtn").addEventListener("click", cancelEdit);
+
+  document.getElementById("fPhotoBtn").addEventListener("click", () => document.getElementById("fPhoto").click());
+  document.getElementById("photoRemoveBtn").addEventListener("click", () => {
+    document.getElementById("fPhoto").value = "";
+    hidePhotoPreview();
+  });
+
+  document.getElementById("fPhoto").addEventListener("change", async () => {
+    const input = document.getElementById("fPhoto");
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert(t("alertInvalidPhotoType"));
+      input.value = "";
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      alert(t("alertPhotoTooLarge", { mb: Math.round(MAX_PHOTO_BYTES / (1024 * 1024)) }));
+      input.value = "";
+      return;
+    }
+
+    try {
+      const dataUrl = await resizeImage(file, PHOTO_MAX_SIZE);
+      showPhotoPreview(dataUrl, { x: 50, y: 50 });
+    } catch {
+      alert(t("alertPhotoReadError")); // a broken/unreadable image just means no photo, not a failed add
+      input.value = "";
+      hidePhotoPreview();
+    }
+  });
+
+  document.getElementById("addForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("fName").value;
+    if (!name.trim()) return;
+
+    const data = {
+      name,
+      origin: document.getElementById("fOrigin").value,
+      photo: currentPhotoDataUrl,
+      photoFocus: currentPhotoFocus,
+      birth: document.getElementById("fBirthValue").value,
+      death: document.getElementById("fDeathValue").value,
+      parent1: document.getElementById("fParent1").value,
+      parent2: document.getElementById("fParent2").value,
+      spouse: document.getElementById("fSpouse").value,
+    };
+
+    if (editingId) {
+      updatePerson(editingId, data);
+      cancelEdit();
+    } else {
+      addPerson(data);
+      e.target.reset();
+      hidePhotoPreview();
+      document.getElementById("fName").focus();
+    }
+  });
+
+  document.getElementById("clearAllBtn").addEventListener("click", clearAll);
+  document.getElementById("printBtn").addEventListener("click", () => window.print());
+  document.getElementById("exportBtn").addEventListener("click", exportToFile);
+
+  const importFileInput = document.getElementById("importFile");
+  document.getElementById("importBtn").addEventListener("click", () => importFileInput.click());
+  importFileInput.addEventListener("change", () => {
+    if (importFileInput.files[0]) importFromFile(importFileInput.files[0]);
+    importFileInput.value = ""; // so picking the same file again still fires "change"
+  });
+
+  document.getElementById("langToggle").addEventListener("click", () => {
+    lang = lang === "en" ? "bg" : "en";
+    try { localStorage.setItem(LANG_KEY, lang); } catch { /* ignore */ }
+    applyStaticTranslations();
+    render();
+  });
+
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    try { localStorage.setItem(THEME_KEY, theme); } catch { /* ignore */ }
+    applyTheme();
+    render(); // family-line colors bake theme-dependent lightness at render time, unlike var(--line)
+  });
+
+  applyTheme();
+  applyStaticTranslations();
+  render();
+})();
+</script>
+<script>
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("family-tree-sw.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
