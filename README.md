@@ -2,7 +2,7 @@
 
 **Live app:** https://petaryankov.github.io/Family-Tree/
 
-*(Български по-долу / Bulgarian below)*
+*([Български по-долу ↓](#български) / Bulgarian below)*
 
 ---
 
@@ -102,6 +102,8 @@ Open **https://petaryankov.github.io/Family-Tree/** and:
 ---
 
 ## Български
+
+*([↑ English](#english))*
 
 Безплатно, лично приложение за родословно дърво, което работи изцяло в
 браузъра ти — без акаунт, без сървър, без реклами. Добавяш хора, свързваш
