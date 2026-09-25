@@ -1,7 +1,7 @@
 {
-  "name": "Родословно дърво",
-  "short_name": "Родословие",
-  "description": "Семейно родословно дърво",
+  "name": "Family Tree",
+  "short_name": "Family Tree",
+  "description": "Family tree / genealogy app",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

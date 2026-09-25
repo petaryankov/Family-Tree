@@ -10,7 +10,10 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
+  // Don't self.skipWaiting() here — a new SW stays "waiting" until the page
+  // asks it to take over (see the message listener below), so the page can
+  // show an "update available" banner first instead of silently swapping
+  // the app out from under whatever the person is doing.
 });
 
 self.addEventListener("activate", (event) => {
@@ -24,6 +27,10 @@ self.addEventListener("activate", (event) => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {

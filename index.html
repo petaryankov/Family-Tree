@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#14171a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Родословие">
+<meta name="apple-mobile-web-app-title" content="Family Tree">
 <style>
   :root {
     --bg: #14171a;
@@ -103,7 +103,7 @@
 
   main {
     width: 100%;
-    max-width: 68rem;
+    max-width: 96rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -413,12 +413,27 @@
     border-radius: 10px;
     background: var(--bg-deep);
     min-height: 340px;
-    max-height: 72vh;
+    max-height: 82vh;
     position: relative;
+    /* display:flex here is only so #treeZoomSpacer's margin:auto (below)
+       can center it when it's smaller than the viewport (e.g. zoomed far
+       out) — scrolling can't shift content past x/y=0, so without this
+       it sticks to the top-left instead of looking centered. Deliberately
+       NOT using align-items/justify-content:center for this — centering
+       an OVERFLOWING flex item that way is a well-known trap: browsers
+       split the overflow evenly on both sides, which moves the start of
+       the scrollable area past the content's actual top-left corner and
+       makes it impossible to scroll back to it. margin:auto on the child
+       doesn't have that problem — it only centers when there's genuine
+       extra space, and falls back to 0 (normal scrolling) once the
+       content is larger than the container. */
+    display: flex;
   }
 
   #treeZoomSpacer {
     position: relative;
+    margin: auto; /* see #treeWrap's display:flex comment */
+    flex-shrink: 0; /* never let the flex layout shrink it below its set size */
   }
 
   #treeInner {
@@ -575,15 +590,49 @@
     line-height: 1.5;
   }
 
+  .update-banner {
+    position: fixed;
+    left: 50%;
+    bottom: 1.2rem;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 0.6rem 0.6rem 0.6rem 1.1rem;
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+    font-size: 0.85rem;
+    color: var(--ink);
+    max-width: calc(100vw - 2rem);
+  }
+  .update-banner[hidden] { display: none; }
+  .update-banner button {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    font-weight: 700;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
   /* Print: just the tree, on paper-friendly light colors, with the full
      tree visible (not clipped to whatever fit the on-screen scroll box). */
+  @page { margin: 10mm; }
+
   @media print {
     header .eyebrow, .surprise-btn, form#addForm,
-    .panel h2, .toolbar, footer, .edit-hint, .del, .header-controls, .zoom-controls {
+    .panel h2, .toolbar, footer, .edit-hint, .del, .header-controls, .zoom-controls, .update-banner {
       display: none !important;
     }
-    #treeInner { transform: none !important; }
-    #treeZoomSpacer { width: auto !important; height: auto !important; }
+    /* #treeInner's own zoom is set in JS right before printing, sized to
+       fit the printed page — see printTree(). It must NOT be forced back
+       to unscaled here, or a tree wider than one page just gets cut off
+       at the page edge instead of shrunk to fit. */
     html, body { background: #fff; }
     .panel {
       background: #fff;
@@ -622,7 +671,13 @@
   }
 
   .header-controls {
-    position: fixed;
+    /* Absolute (not fixed) so it stays put at the top of the page and
+       scrolls away with the header instead of floating over the tree —
+       positioned against the page's own top-right corner (no positioned
+       ancestor in between) rather than the header's own box, which is
+       narrower than the rest of the page and would pull it in from the
+       true edge. */
+    position: absolute;
     top: 1.4rem;
     right: 1.8rem;
     z-index: 30;
@@ -766,7 +821,7 @@
     </div>
   </section>
 
-  <footer data-i18n="footer">© 2026 Petar Yankov</footer>
+  <footer><span data-i18n="footer">© 2026 Petar Yankov</span> · <span class="version">v1.0</span></footer>
 </main>
 
 <script>
@@ -778,6 +833,8 @@
   const translations = {
     en: {
       pageTitle: "Family Tree",
+      updateAvailable: "A new version is available.",
+      updateReload: "Reload",
       eyebrow: "Genealogy",
       title: "Family Tree",
       addPersonHeading: "Add a person",
@@ -845,6 +902,8 @@
     },
     bg: {
       pageTitle: "Родословно дърво",
+      updateAvailable: "Налична е нова версия.",
+      updateReload: "Презареди",
       eyebrow: "Родословие",
       title: "Родословно дърво",
       addPersonHeading: "Добави човек",
@@ -872,10 +931,10 @@
       placeholderPickDate: "Кликни",
       labelDied: "Починал/а",
       placeholderOptional: "по избор",
-      labelParent: "Родител",
-      labelParent2: "Родител 2",
+      labelParent: "Майка",
+      labelParent2: "Баща",
       labelSpouse: "Съпруг/а",
-      none: "— никой —",
+      none: "— няма —",
       addPerson: "Добави човек",
       saveChanges: "Запази промените",
       cancelEdit: "Откажи редакцията",
@@ -971,7 +1030,7 @@
   }
 
   const CARD_W = 140, CARD_H = 112;
-  const SPOUSE_GAP = 14, UNIT_GAP = 46, ROW_H = 180;
+  const SPOUSE_GAP = 32, UNIT_GAP = 46, ROW_H = 220;
   const PHOTO_MAX_SIZE = 160; // px — thumbnails are downscaled before storing, to keep localStorage lean
   const MAX_PHOTO_BYTES = 8 * 1024 * 1024; // 8MB — rejected before we even try to read/decode it
 
@@ -1299,7 +1358,6 @@
     for (let g = 0; g <= maxGen; g++) rows.push(units.filter(u => u.gen === g));
 
     // Order each row by the average x of the unit's parents in the row above.
-    const unitX = new Map(); // unit -> center x
     const personX = new Map(); // person id -> center x
 
     rows.forEach((row, g) => {
@@ -1319,19 +1377,202 @@
       pullInLawsAdjacent(row);
       faceSiblingPairsInward(row);
 
-      let cursor = 0;
-      for (const unit of row) {
-        const width = unit.members.length === 2 ? CARD_W * 2 + SPOUSE_GAP : CARD_W;
-        const centerX = cursor + width / 2;
-        unitX.set(unit, centerX);
-        unit.members.forEach((m, i) => {
-          personX.set(m.id, unit.members.length === 2
-            ? centerX + (i === 0 ? -(CARD_W + SPOUSE_GAP) / 2 : (CARD_W + SPOUSE_GAP) / 2)
-            : centerX);
-        });
-        cursor += width + UNIT_GAP;
-      }
+      positionRow(row, personX);
     });
+
+    // Position every unit in a row as close as possible to the average x of
+    // its own parents (its "ideal" center) — keeping the row's given
+    // left-to-right order and never overlapping — instead of a simple
+    // forward pack. A forward-only pack can only push a unit right of its
+    // ideal to avoid overlap, never left, so any earlier crowding in the
+    // row permanently drags every sibling group after it off-center, and
+    // that drift then compounds into the next generation. This uses the
+    // standard "isotonic regression" (pool-adjacent-violators) solution to
+    // "keep these points in order, as close as possible to their targets,
+    // respecting minimum spacing": whenever two neighbors' ideal positions
+    // conflict, they're merged into one block at their shared (weighted)
+    // average and re-checked against the block before it, cascading as
+    // needed. Units with no ideal of their own (no parents placed yet, and
+    // no co-parent to anchor on either) exert no pull and simply sit
+    // wherever their neighbors leave room.
+    function positionRow(row, personX) {
+      const n = row.length;
+      if (n === 0) return;
+
+      // Every PERSON in this row who has exactly two parents, and who is
+      // one of exactly two such people sharing that same pair of parents,
+      // gets their OWN ideal x overridden to land under ONE specific
+      // parent — left sibling under whichever parent sits left, right
+      // sibling under whichever sits right — instead of both averaging to
+      // the midpoint between the parents. This runs at the PERSON level
+      // (not per card-unit) so it still applies to someone who's married:
+      // see the per-unit placement below, where a married pair can even
+      // have BOTH partners qualify at once (two different sibling pairs
+      // marrying each other) — the gap between spouses simply stretches
+      // to let each of them land under their own parents.
+      const personKey = (p) => p.parents.length === 2 ? [...p.parents].sort().join("|") : null;
+      const keyCount = new Map();
+      for (const u of row) for (const m of u.members) {
+        const key = personKey(m);
+        if (key !== null) keyCount.set(key, (keyCount.get(key) || 0) + 1);
+      }
+      const overrideX = new Map(); // person id -> overridden ideal x
+      const leftAssignedKey = new Set(); // keys already given their "left" sibling
+      for (const u of row) {
+        for (const m of u.members) {
+          const key = personKey(m);
+          if (key === null || keyCount.get(key) !== 2) continue;
+          const [pid1, pid2] = key.split("|");
+          const x1 = personX.get(pid1), x2 = personX.get(pid2);
+          if (x1 === undefined || x2 === undefined) continue;
+          const leftParentX = Math.min(x1, x2), rightParentX = Math.max(x1, x2);
+          if (leftAssignedKey.has(key)) {
+            overrideX.set(m.id, rightParentX);
+          } else {
+            overrideX.set(m.id, leftParentX);
+            leftAssignedKey.add(key);
+          }
+        }
+      }
+
+      // A person's own ideal x: the override above if they're one of a
+      // sibling pair, else the average of their own recorded parents,
+      // else null (no anchor of their own — e.g. married in, with no
+      // ancestry entered).
+      function personIdeal(p) {
+        if (overrideX.has(p.id)) return overrideX.get(p.id);
+        if (p.parents.length === 0) return null;
+        const xs = p.parents.map(pid => personX.get(pid)).filter(x => x !== undefined);
+        return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+      }
+
+      const widths = new Array(n);
+      const ideals = new Array(n);
+      const plan = new Array(n); // how to turn this unit's resolved center back into member positions
+
+      row.forEach((u, k) => {
+        if (u.members.length === 1) {
+          const t = personIdeal(u.members[0]);
+          widths[k] = CARD_W;
+          ideals[k] = t !== null ? t : avgParentX(u, personX);
+          plan[k] = { kind: "lone" };
+          return;
+        }
+
+        const [m0, m1] = u.members;
+        const t0 = personIdeal(m0), t1 = personIdeal(m1);
+
+        if (t0 !== null && t1 !== null) {
+          // Dual anchor — both partners have their own parents to land
+          // under, possibly in different places entirely. Stretch the
+          // gap between them (never below the usual SPOUSE_GAP) so both
+          // can land exactly on their own target at once.
+          const leftIsM0 = t0 <= t1;
+          const leftT = leftIsM0 ? t0 : t1, rightT = leftIsM0 ? t1 : t0;
+          const gap = Math.max(SPOUSE_GAP, rightT - leftT - CARD_W);
+          widths[k] = CARD_W * 2 + gap;
+          ideals[k] = (leftT + rightT) / 2;
+          plan[k] = { kind: "dual", leftIsM0, gap };
+        } else if (t0 !== null || t1 !== null) {
+          // One blood anchor, one spouse with no ancestry of their own —
+          // shift the block's ideal by half its width so the symmetric
+          // split below lands the anchor exactly on target and leaves
+          // the spouse trailing off to whichever side is left.
+          widths[k] = CARD_W * 2 + SPOUSE_GAP;
+          const half = (CARD_W + SPOUSE_GAP) / 2;
+          ideals[k] = (t0 !== null ? t0 : t1) + (t0 !== null ? half : -half);
+          plan[k] = { kind: "split" };
+        } else {
+          // Neither partner has ancestry entered — fall back to the
+          // co-parent heuristic for the pair as a whole, placed symmetric.
+          widths[k] = CARD_W * 2 + SPOUSE_GAP;
+          ideals[k] = avgParentX(u, personX);
+          plan[k] = { kind: "split" };
+        }
+      });
+
+      // Two paired lone-child siblings (assigned via overrideX above)
+      // want to line up exactly under their own — often closely spaced —
+      // parents. The default UNIT_GAP between neighboring cards is wider
+      // than that needs to be, so it's narrowed to SPOUSE_GAP for that
+      // one adjacent pair, same as the parents' own spacing.
+      const gaps = new Array(Math.max(n - 1, 0)).fill(UNIT_GAP);
+      for (let k = 0; k < n - 1; k++) {
+        if (plan[k].kind !== "lone" || plan[k + 1].kind !== "lone") continue;
+        const a = row[k].members[0], b = row[k + 1].members[0];
+        const key = personKey(a);
+        if (key !== null && key === personKey(b) && overrideX.has(a.id) && overrideX.has(b.id)) {
+          gaps[k] = SPOUSE_GAP;
+        }
+      }
+
+      const offset = new Array(n);
+      let cum = 0;
+      for (let k = 0; k < n; k++) {
+        offset[k] = cum;
+        cum += widths[k] + (gaps[k] ?? UNIT_GAP);
+      }
+      // y[k] is this unit's desired left edge relative to a tight forward
+      // pack starting at 0 — zero (no pull either way) for a unit with no
+      // ideal of its own.
+      const y = row.map((u, k) => ideals[k] === null ? 0 : (ideals[k] - widths[k] / 2) - offset[k]);
+
+      const blocks = []; // stack of {value, weight}, weight = number of units pooled in
+      for (let k = 0; k < n; k++) {
+        let block = { value: y[k], weight: 1 };
+        blocks.push(block);
+        while (blocks.length > 1 && blocks[blocks.length - 2].value > block.value) {
+          const b2 = blocks.pop();
+          const b1 = blocks.pop();
+          block = {
+            value: (b1.value * b1.weight + b2.value * b2.weight) / (b1.weight + b2.weight),
+            weight: b1.weight + b2.weight,
+          };
+          blocks.push(block);
+        }
+      }
+
+      const z = new Array(n);
+      let idx = 0;
+      for (const b of blocks) {
+        for (let c = 0; c < b.weight; c++) { z[idx] = b.value; idx++; }
+      }
+
+      row.forEach((unit, k) => {
+        const centerX = z[k] + offset[k] + widths[k] / 2;
+        if (unit.members.length === 1) {
+          personX.set(unit.members[0].id, centerX);
+          return;
+        }
+        const [m0, m1] = unit.members;
+        if (plan[k].kind === "dual") {
+          const halfGap = plan[k].gap / 2;
+          const leftX = centerX - CARD_W / 2 - halfGap;
+          const rightX = centerX + CARD_W / 2 + halfGap;
+          personX.set((plan[k].leftIsM0 ? m0 : m1).id, leftX);
+          personX.set((plan[k].leftIsM0 ? m1 : m0).id, rightX);
+        } else {
+          const half = (CARD_W + SPOUSE_GAP) / 2;
+          personX.set(m0.id, centerX - half);
+          personX.set(m1.id, centerX + half);
+        }
+      });
+    }
+
+    // Rows were placed independently and can each drift into negative x
+    // (see above) — normalize by shifting every row by the same amount so
+    // the leftmost card lands at x = 0. A single shared shift (rather than
+    // one computed per row) is what keeps the parent/child alignment the
+    // loop above just computed intact.
+    let minX = Infinity, maxX = -Infinity;
+    for (const x of personX.values()) {
+      minX = Math.min(minX, x - CARD_W / 2);
+      maxX = Math.max(maxX, x + CARD_W / 2);
+    }
+    if (!isFinite(minX)) { minX = 0; maxX = 0; }
+    const shift = -minX;
+    for (const [id, x] of personX) personX.set(id, x + shift);
+    const totalWidth = Math.max(maxX - minX, 400);
 
     // A unit with no ancestry of its own (e.g. someone added only as a
     // co-parent, no family entered for them) sorts wherever avgParentX(=null)
@@ -1425,9 +1666,27 @@
       }
     }
 
+    // For a married couple sharing a unit, only ONE of the two is usually
+    // the actual blood relative in this family line — the other married
+    // in and (typically) has no ancestry of their own entered. Picks out
+    // that one member's index (0 or 1) so ideal-x calculations can anchor
+    // on the child's own parents instead of blending in the spouse's
+    // unrelated family. Returns 0 for a lone (unmarried) unit — trivially
+    // its only member — and null when it's ambiguous (both members have
+    // parents entered, e.g. cousins who married each other, or neither
+    // does), in which case callers fall back to treating the whole unit
+    // as one blended blob, same as before this distinction existed.
+    function unitAnchorIndex(unit) {
+      if (unit.members.length === 1) return 0;
+      const withParents = unit.members.map((m, i) => m.parents.length > 0 ? i : -1).filter(i => i !== -1);
+      return withParents.length === 1 ? withParents[0] : null;
+    }
+
     function avgParentX(unit, personX) {
+      const anchorIdx = unitAnchorIndex(unit);
+      const anchorMembers = anchorIdx !== null ? [unit.members[anchorIdx]] : unit.members;
       const parentIds = new Set();
-      for (const m of unit.members) for (const pid of m.parents) parentIds.add(pid);
+      for (const m of anchorMembers) for (const pid of m.parents) parentIds.add(pid);
       let xs = [...parentIds].map(id => personX.get(id)).filter(x => x !== undefined);
       if (xs.length === 0) {
         // No parents of their own to anchor on — e.g. someone added only as
@@ -1448,13 +1707,6 @@
       return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
     }
 
-    const rowWidths = rows.map(row => {
-      let w = 0;
-      for (const u of row) w += (u.members.length === 2 ? CARD_W * 2 + SPOUSE_GAP : CARD_W) + UNIT_GAP;
-      return Math.max(w - UNIT_GAP, 0); // drop the trailing gap after the last unit — that's not real content width
-    });
-    const totalWidth = Math.max(...rowWidths, 400);
-
     const positions = {};
     people.forEach(p => {
       const x = personX.get(p.id) ?? 0;
@@ -1462,7 +1714,7 @@
       positions[p.id] = { x, y };
     });
 
-    return { positions, width: totalWidth, height: (maxGen + 1) * ROW_H + CARD_H + 20, rowWidths };
+    return { positions, width: totalWidth, height: (maxGen + 1) * ROW_H + CARD_H + 20 };
   }
 
   // --- Rendering ---------------------------------------------------------
@@ -1484,22 +1736,23 @@
     }
     emptyHint.style.display = "none";
 
-    const { positions, width, height, rowWidths } = layout();
+    const { positions, width, height } = layout();
 
-    // Center each generation row independently within the visible area,
-    // rather than centering the tree as one block — a narrow row (e.g. the
-    // oldest generation with just two people) sits centered under whatever
-    // is above/below it instead of trailing off to one side because some
-    // other row happens to be wider. Divide by zoom first — clientWidth is
-    // the on-screen (already-scaled) viewport, but this math all happens in
-    // the tree's own unscaled coordinate space.
+    // Center the whole tree as a single block within the visible area.
+    // layout() already centers each child (or sibling group) under its own
+    // parents using a shared, tree-wide set of x-coordinates — re-centering
+    // each generation row independently on top of that (as this used to do)
+    // would undo that alignment any time a row's own content happens to be
+    // narrower or wider than another row's, which is most of the time.
+    // Divide by zoom first — clientWidth is the on-screen (already-scaled)
+    // viewport, but this math all happens in the tree's own unscaled
+    // coordinate space.
     const availableWidth = (document.getElementById("treeWrap").clientWidth / zoomLevel) || width;
+    const offsetX = Math.max(0, Math.round((availableWidth - width) / 2));
     let maxRight = 0;
     for (const id in positions) {
       const pos = positions[id];
-      const g = Math.round((pos.y - 20) / ROW_H);
-      const rowOffset = Math.max(0, Math.round((availableWidth - (rowWidths[g] || 0)) / 2));
-      pos.x += rowOffset;
+      pos.x += offsetX;
       maxRight = Math.max(maxRight, pos.x + CARD_W / 2);
     }
 
@@ -1661,9 +1914,25 @@
     document.getElementById("treeInner").style.transform = `scale(${zoomLevel})`;
   }
 
+  // Zoom around the center of the viewport rather than its top-left corner
+  // (#treeInner's transform-origin) — otherwise whatever happened to be
+  // pinned at the origin stays put and everything else visibly drifts
+  // away from it as the scale changes. Whatever tree-coordinate point is
+  // currently centered in the visible area is recomputed from the
+  // pre-zoom scroll position, then the scroll position is adjusted after
+  // the new scale is applied so that same point ends up centered again.
   function setZoom(next) {
+    const treeWrap = document.getElementById("treeWrap");
+    const viewportW = treeWrap.clientWidth, viewportH = treeWrap.clientHeight;
+    const oldZoom = zoomLevel;
+    const centerX = (treeWrap.scrollLeft + viewportW / 2) / oldZoom;
+    const centerY = (treeWrap.scrollTop + viewportH / 2) / oldZoom;
+
     zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
     applyZoom();
+
+    treeWrap.scrollLeft = centerX * zoomLevel - viewportW / 2;
+    treeWrap.scrollTop = centerY * zoomLevel - viewportH / 2;
   }
 
   document.getElementById("zoomInBtn").addEventListener("click", () => setZoom(zoomLevel * 1.25));
@@ -2237,7 +2506,59 @@
   });
 
   document.getElementById("clearAllBtn").addEventListener("click", clearAll);
-  document.getElementById("printBtn").addEventListener("click", () => window.print());
+  document.getElementById("printBtn").addEventListener("click", printTree);
+
+  // The tree can easily be wider or taller than a single printed page —
+  // #treeInner's on-screen zoom (applyZoom) only ever fits it to the
+  // browser viewport, not to paper. Shrink it to fit one page right
+  // before printing, then restore the normal on-screen zoom afterward.
+  //
+  // This deliberately uses the CSS `zoom` property instead of the
+  // `transform: scale()` applyZoom() normally uses on screen. A
+  // transform is purely visual — it does NOT shrink the element's
+  // contribution to the page's layout/flow, so the print engine still
+  // paginates as if the tree were full size and just visually renders it
+  // smaller, which is exactly what was cutting the print job across
+  // multiple pages and clipping the last one. `zoom` actually reflows
+  // the box at the scaled size, so the browser paginates correctly.
+  // (Supported in Chromium/Safari-based browsers and current Firefox;
+  // where it's unsupported, this just falls back silently to the old
+  // multi-page behavior — no worse than before.)
+  //
+  // The page-size numbers are a conservative PORTRAIT estimate (A4/
+  // Letter minus the @page margin, at 96 CSS px/inch, with extra slack)
+  // rather than trying to force landscape — browsers vary widely in how
+  // (and whether) they honor a requested page orientation, so assuming
+  // the narrower, more common default and understating the available
+  // space is what actually guarantees nothing gets cut off, even if it
+  // means printing a bit smaller than strictly necessary.
+  const PRINT_PAGE_W = 680, PRINT_PAGE_H = 900;
+
+  function printTree() {
+    const treeInner = document.getElementById("treeInner");
+    const spacer = document.getElementById("treeZoomSpacer");
+    if (lastLayoutWidth && lastLayoutHeight) {
+      const printScale = Math.min(PRINT_PAGE_W / lastLayoutWidth, PRINT_PAGE_H / lastLayoutHeight, 1);
+      treeInner.style.transform = "none";
+      treeInner.style.zoom = printScale;
+      // #treeInner is position:absolute (so on-screen zooming never
+      // disturbs #treeWrap's scroll math) — which also means NEITHER
+      // zoom NOR transform on it ever changes #treeZoomSpacer's own
+      // size, because an absolutely-positioned box is out of normal flow
+      // and never contributes to a parent's size. #treeZoomSpacer's size
+      // has to be set explicitly to the scaled footprint here, or it
+      // keeps reserving the old, larger on-screen size and the page
+      // still paginates as if nothing shrank.
+      spacer.style.width = (lastLayoutWidth * printScale) + "px";
+      spacer.style.height = (lastLayoutHeight * printScale) + "px";
+    }
+    window.print();
+  }
+
+  window.addEventListener("afterprint", () => {
+    document.getElementById("treeInner").style.zoom = "";
+    applyZoom(); // restores the transform-based on-screen zoom
+  });
   document.getElementById("exportBtn").addEventListener("click", exportToFile);
 
   const importFileInput = document.getElementById("importFile");
@@ -2266,11 +2587,47 @@
   render();
 })();
 </script>
+<div id="updateBanner" class="update-banner" hidden>
+  <span data-i18n="updateAvailable">A new version is available.</span>
+  <button type="button" id="updateReloadBtn" data-i18n="updateReload">Reload</button>
+</div>
 <script>
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("family-tree-sw.js").catch(() => {});
+      navigator.serviceWorker.register("family-tree-sw.js").then((registration) => {
+        // A worker already sitting in "waiting" (e.g. this tab was opened
+        // before the new one finished installing) means an update is ready now.
+        if (registration.waiting) showUpdateBanner(registration);
+
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", () => {
+            // "installed" + an existing controller means this is an UPDATE,
+            // not the very first install — the first install has no
+            // controller yet, and shouldn't show an "update available" banner.
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              showUpdateBanner(registration);
+            }
+          });
+        });
+      }).catch(() => {});
+
+      let reloading = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloading) return;
+        reloading = true;
+        location.reload();
+      });
     });
+  }
+
+  function showUpdateBanner(registration) {
+    const banner = document.getElementById("updateBanner");
+    banner.hidden = false;
+    document.getElementById("updateReloadBtn").addEventListener("click", () => {
+      if (registration.waiting) registration.waiting.postMessage("SKIP_WAITING");
+    }, { once: true });
   }
 </script>
 </body>
