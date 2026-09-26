@@ -1,4 +1,4 @@
-const CACHE_NAME = "family-tree-cache-v1";
+const CACHE_NAME = "family-tree-cache-v2";
 const ASSETS = [
   "./index.html",
   "./family-tree.manifest.json",
