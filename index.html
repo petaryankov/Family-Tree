@@ -481,7 +481,7 @@
     display: block;
   }
 
-  .person .photo { object-fit: cover; }
+  .person .photo { object-fit: cover; cursor: pointer; }
 
   .person .photo-placeholder {
     display: flex;
@@ -581,6 +581,115 @@
   .toolbar-group button:hover { border-color: var(--accent); color: var(--accent); }
   #clearAllBtn:hover { border-color: var(--danger); color: var(--danger); }
 
+  .tree-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  .tree-search input {
+    flex: 1;
+    max-width: 20rem;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+  }
+  .tree-search input:focus { outline: none; border-color: var(--accent); }
+  .search-count {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+  .search-clear {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--ink-dim);
+    border-radius: 999px;
+    width: 1.7rem;
+    height: 1.7rem;
+    line-height: 1;
+    font-size: 1rem;
+  }
+  .search-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+  .person.search-match { border-color: var(--accent); }
+  .person.search-current, .person.rel-path {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .relationship-finder {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .relationship-finder select {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+    max-width: 11rem;
+  }
+  .relationship-finder select:focus { outline: none; border-color: var(--accent); }
+  .relationship-finder button {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--ink-dim);
+  }
+  .relationship-finder button:hover { border-color: var(--accent); color: var(--accent); }
+  .rel-result {
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+  }
+  .rel-result.no-path { color: var(--danger); }
+
+  .tree-stats {
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    margin-bottom: 0.6rem;
+  }
+
+  .photo-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .photo-lightbox[hidden] { display: none; }
+  .photo-lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 10px;
+    box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.8);
+  }
+  .photo-lightbox-close {
+    position: fixed;
+    top: 1.2rem;
+    right: 1.4rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0;
+  }
+  .photo-lightbox-close:hover { background: rgba(255, 255, 255, 0.2); filter: none; }
+
   footer {
     margin: 1rem auto 0;
     font-size: 0.8rem;
@@ -626,7 +735,7 @@
 
   @media print {
     header .eyebrow, .surprise-btn, form#addForm,
-    .panel h2, .toolbar, footer, .edit-hint, .del, .header-controls, .zoom-controls, .update-banner {
+    .panel h2, .toolbar, footer, .edit-hint, .del, .header-controls, .zoom-controls, .update-banner, .tree-search, .relationship-finder, .tree-stats {
       display: none !important;
     }
     /* #treeInner's own zoom is set in JS right before printing, sized to
@@ -799,11 +908,14 @@
 
   <section class="panel">
     <h2 data-i18n="treeHeading">Tree</h2>
+    <div id="treeStats" class="tree-stats" hidden></div>
     <div class="toolbar">
       <div class="toolbar-group">
         <button id="printBtn" type="button" data-i18n="print">Print</button>
+        <button id="shareBtn" type="button" data-i18n="share" hidden>Share</button>
         <button id="importBtn" type="button" data-i18n="loadFromFile">Load from file</button>
         <button id="exportBtn" type="button" data-i18n="saveToFile">Save to file</button>
+        <button id="exportImageBtn" type="button" data-i18n="exportImage">Export as image</button>
         <input type="file" id="importFile" accept="application/json,.json" hidden>
       </div>
       <div class="zoom-controls">
@@ -813,6 +925,18 @@
       </div>
       <button id="clearAllBtn" type="button" data-i18n="clearTree">Clear entire tree</button>
     </div>
+    <div class="tree-search">
+      <input type="text" id="personSearch" data-i18n-placeholder="searchPlaceholder" placeholder="Search person...">
+      <span id="personSearchCount" class="search-count" hidden></span>
+      <button type="button" id="personSearchClear" class="search-clear" data-i18n-aria-label="searchClear" aria-label="Clear search" hidden>×</button>
+    </div>
+    <div class="relationship-finder">
+      <select id="relPersonA"><option value="" data-i18n="relPersonAPlaceholder">Person A</option></select>
+      <select id="relPersonB"><option value="" data-i18n="relPersonBPlaceholder">Person B</option></select>
+      <button type="button" id="relFindBtn" data-i18n="relFind">Find relationship</button>
+      <button type="button" id="relClearBtn" class="search-clear" data-i18n-aria-label="relClear" aria-label="Clear" hidden>×</button>
+      <span id="relResult" class="rel-result" hidden></span>
+    </div>
     <div id="treeWrap">
       <div id="treeZoomSpacer">
         <div id="treeInner"></div>
@@ -821,8 +945,18 @@
     </div>
   </section>
 
-  <footer><span data-i18n="footer">© 2026 Petar Yankov</span> · <span class="version">v1.0</span></footer>
+  <footer><span data-i18n="footer">© 2026 Petar Yankov</span> · <span class="version">v1.1</span></footer>
 </main>
+
+<div id="undoBanner" class="update-banner" hidden>
+  <span id="undoBannerText"></span>
+  <button type="button" id="undoBtn" data-i18n="undo">Undo</button>
+</div>
+
+<div id="photoLightbox" class="photo-lightbox" hidden>
+  <img id="photoLightboxImg" alt="">
+  <button type="button" id="photoLightboxClose" class="photo-lightbox-close" data-i18n-aria-label="close" aria-label="Close">×</button>
+</div>
 
 <script>
 (() => {
@@ -880,9 +1014,15 @@
       clear: "Clear",
       treeHeading: "Tree",
       print: "Print",
+      share: "Share file",
+      shareUnavailable: "Not available here",
       saveToFile: "Save to file",
+      savedConfirmation: "✓ Saved",
       loadFromFile: "Load from file",
       clearTree: "Clear entire tree",
+      searchPlaceholder: "Search person...",
+      searchClear: "Clear search",
+      searchNoMatches: "No matches",
       emptyHint: "No one added yet — start with the first person above.",
       footer: "© 2026 Petar Yankov",
       editHint: "Click to edit",
@@ -895,8 +1035,30 @@
       confirmDelete: "Remove {name} from the tree? This can't be undone.",
       alertInvalidJson: "That file isn't valid JSON.",
       alertWrongFormat: "That doesn't look like a family tree file exported from here.",
-      confirmImport: "Load {n} people from this file? This replaces the {m} currently in the tree.",
+      confirmImport: "Load this file? {added} new people will be added, {updated} existing ones will be updated to match the file, and {kept} others stay as they are.",
       alertReadError: "Couldn't read that file.",
+      undo: "Undo",
+      personDeleted: "{name} removed.",
+      treeCleared: "Tree cleared.",
+      exportImage: "Export as image",
+      relPersonAPlaceholder: "Person A",
+      relPersonBPlaceholder: "Person B",
+      relFind: "Find relationship",
+      relClear: "Clear",
+      relNoPath: "No relationship found between these two people.",
+      relSamePerson: "That's the same person.",
+      relSelectBoth: "Choose two people first.",
+      relSpouse: "spouse",
+      relParent: "parent",
+      relChild: "child",
+      close: "Close",
+      confirmRemovePhoto: "Remove this photo?",
+      statPeopleOne: "1 person",
+      statPeopleMany: "{n} people",
+      statGenOne: "1 generation",
+      statGenMany: "{n} generations",
+      statOldest: "oldest: {name} ({age})",
+      statYoungest: "youngest: {name} ({age})",
       weekdays: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
       months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     },
@@ -949,9 +1111,15 @@
       clear: "Изчисти",
       treeHeading: "Дърво",
       print: "Печат",
+      share: "Сподели файла",
+      shareUnavailable: "Не е налично тук",
       saveToFile: "Запази във файл",
+      savedConfirmation: "✓ Запазено",
       loadFromFile: "Зареди от файл",
       clearTree: "Изчисти цялото дърво",
+      searchPlaceholder: "Търси човек...",
+      searchClear: "Изчисти търсенето",
+      searchNoMatches: "Няма съвпадения",
       emptyHint: "Все още никой не е добавен — започни с първия човек отгоре.",
       footer: "© 2026 Петър Янков",
       editHint: "Кликни за редакция",
@@ -964,8 +1132,30 @@
       confirmDelete: "Да премахна {name} от дървото? Това не може да се отмени.",
       alertInvalidJson: "Файлът не е валиден JSON.",
       alertWrongFormat: "Това не прилича на файл с родословно дърво, изнесен оттук.",
-      confirmImport: "Да заредя {n} души от този файл? Това ще замести {m}, които в момента са в дървото.",
+      confirmImport: "Да заредя този файл? {added} нови ще се добавят, {updated} съществуващи ще се обновят според файла, а {kept} други остават непроменени.",
       alertReadError: "Файлът не можа да бъде прочетен.",
+      undo: "Отмени",
+      personDeleted: "{name} премахнат/а.",
+      treeCleared: "Дървото е изчистено.",
+      exportImage: "Изнеси като снимка",
+      relPersonAPlaceholder: "Човек А",
+      relPersonBPlaceholder: "Човек Б",
+      relFind: "Намери връзка",
+      relClear: "Изчисти",
+      relNoPath: "Не е открита връзка между тези двама души.",
+      relSamePerson: "Това е един и същ човек.",
+      relSelectBoth: "Избери двама души първо.",
+      relSpouse: "съпруг/а",
+      relParent: "родител",
+      relChild: "дете",
+      close: "Затвори",
+      confirmRemovePhoto: "Да премахна ли тази снимка?",
+      statPeopleOne: "1 човек",
+      statPeopleMany: "{n} души",
+      statGenOne: "1 поколение",
+      statGenMany: "{n} поколения",
+      statOldest: "най-възрастен: {name} ({age})",
+      statYoungest: "най-млад: {name} ({age})",
       weekdays: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"],
       months: ["Януари", "Февруари", "Март", "Април", "Май", "Юни", "Юли", "Август", "Септември", "Октомври", "Ноември", "Декември"],
     },
@@ -1037,6 +1227,88 @@
   /** @type {{id:string,name:string,photo:string|null,birth:string,death:string,parents:string[],spouse:string|null}[]} */
   let people = load();
   let editingId = null; // id of the person currently loaded into the form for editing, or null
+
+  // The on-disk file this session is "connected" to (Chrome/Edge only —
+  // the File System Access API's read-write file handle). Set after a
+  // successful load or save through the native picker. While set, "Save
+  // to file" writes straight back to this SAME file with no picker at
+  // all — the point being that opening a file, fixing a couple of
+  // records, and saving should feel like editing a document, not like
+  // exporting a brand new copy every time.
+  let currentFileHandle = null;
+
+  // A handle recovered from IndexedDB (see below) at page load, whose
+  // read-write PERMISSION hasn't been re-confirmed yet this session —
+  // browsers require an actual user gesture for that (requestPermission),
+  // which a page-load callback isn't, so it waits here until the first
+  // Save click, which is one.
+  let pendingFileHandle = null;
+
+  // FileSystemFileHandle objects are structured-cloneable, so they can be
+  // stashed in IndexedDB — unlike localStorage, which only holds strings.
+  // This is what lets "Save to file" keep writing to the SAME file across
+  // a page reload/reopen instead of forgetting it the moment the tab
+  // closes and falling back to the picker again next time.
+  const FILE_HANDLE_DB = "family-tree-file-handle";
+  const FILE_HANDLE_STORE = "handles";
+  const FILE_HANDLE_KEY = "current";
+
+  function openHandleDB() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) { reject(new Error("no indexedDB")); return; }
+      const req = indexedDB.open(FILE_HANDLE_DB, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(FILE_HANDLE_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function persistFileHandle(handle) {
+    try {
+      const db = await openHandleDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(FILE_HANDLE_STORE, "readwrite");
+        tx.objectStore(FILE_HANDLE_STORE).put(handle, FILE_HANDLE_KEY);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch {
+      // IndexedDB unavailable, or this browser can't clone a file handle
+      // — quick-save just won't survive a reload; exportToFile() still
+      // works normally within THIS session either way.
+    }
+  }
+
+  async function clearPersistedFileHandle() {
+    try {
+      const db = await openHandleDB();
+      db.transaction(FILE_HANDLE_STORE, "readwrite").objectStore(FILE_HANDLE_STORE).delete(FILE_HANDLE_KEY);
+    } catch { /* nothing to clear */ }
+  }
+
+  // On load, recover a handle from a previous session. If the browser
+  // already granted read-write permission durably, reconnect right away;
+  // otherwise it's held as "pending" until the person actually clicks
+  // Save, since re-asking for permission needs that real click.
+  (async () => {
+    try {
+      const db = await openHandleDB();
+      const handle = await new Promise((resolve) => {
+        const tx = db.transaction(FILE_HANDLE_STORE, "readonly");
+        const req = tx.objectStore(FILE_HANDLE_STORE).get(FILE_HANDLE_KEY);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+      if (!handle) return;
+      const perm = await handle.queryPermission({ mode: "readwrite" });
+      if (perm === "granted") currentFileHandle = handle;
+      else pendingFileHandle = handle;
+    } catch {
+      // no persisted handle, IndexedDB unavailable, or the handle no
+      // longer resolves (file moved/deleted) — Save to file just falls
+      // back to asking where to save, same as a brand new session.
+    }
+  })();
 
   function load() {
     try {
@@ -1117,7 +1389,17 @@
     spouse.spouse = personId;
   }
 
+  // A snapshot of `people` taken right before the last delete/clear, kept
+  // around just long enough for an "Undo" click (see showUndoBanner) — a
+  // lightweight safety net for the one class of accidental data loss that
+  // has no other recovery path short of reloading an older exported file.
+  let undoSnapshot = null;
+  let undoHideTimer = null;
+
   function deletePerson(id) {
+    const person = byId(id);
+    if (!person) return;
+    undoSnapshot = JSON.parse(JSON.stringify(people));
     people = people.filter(p => p.id !== id);
     for (const p of people) {
       p.parents = p.parents.filter(pid => pid !== id);
@@ -1127,14 +1409,30 @@
     if (infoPersonId === id) hidePersonInfo(); // otherwise the popup lingers, showing a now-deleted person
     save();
     render();
+    showUndoBanner(t("personDeleted", { name: person.name }));
   }
 
   function clearAll() {
     if (!confirm(t("confirmClearAll"))) return;
+    undoSnapshot = JSON.parse(JSON.stringify(people));
     people = [];
     hidePersonInfo();
     save();
     render();
+    showUndoBanner(t("treeCleared"));
+  }
+
+  function showUndoBanner(message) {
+    clearTimeout(undoHideTimer);
+    const banner = document.getElementById("undoBanner");
+    document.getElementById("undoBannerText").textContent = message;
+    banner.hidden = false;
+    // Auto-hides (and drops the snapshot) after a while so "Undo" doesn't
+    // linger indefinitely and silently revert a much later, unrelated change.
+    undoHideTimer = setTimeout(() => {
+      banner.hidden = true;
+      undoSnapshot = null;
+    }, 8000);
   }
 
   // --- Save to / load from file ------------------------------------------
@@ -1142,19 +1440,56 @@
   // same file can be loaded back in here, or on another computer/browser.
 
   function buildExportFile() {
-    const stamp = new Date().toISOString().slice(0, 10);
+    // Includes the time (not just the date) so two exports made on the same
+    // day — e.g. one from a phone and one from a computer, then moved onto
+    // the same machine — never land on the exact same filename. Same-day
+    // date-only names made it easy to accidentally save a newer export
+    // right over an older one (or vice versa) during a normal file
+    // transfer, silently losing whichever one lost that naming collision.
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+      + `_${pad(now.getHours())}${pad(now.getMinutes())}`;
     const filename = `family-tree-${stamp}.json`;
     const json = JSON.stringify(people, null, 2);
     return { filename, json };
   }
 
-  // Prefers the native "Save As" picker (Chrome/Edge desktop) so the person
-  // chooses exactly where the file lands. Falls back to a plain download —
-  // which just drops it in the browser's default downloads folder — on
+  // If this session already has a connected file (currentFileHandle —
+  // from an earlier load or save), writes straight back to it: no
+  // picker, no new file, just an in-place update. Otherwise prefers the
+  // native "Save As" picker (Chrome/Edge desktop) so the person chooses
+  // exactly where the file lands — and remembers that choice as the new
+  // connected file for next time. Falls back to a plain download — which
+  // just drops it in the browser's default downloads folder — on
   // browsers/platforms (Firefox, Safari, most mobile browsers) that don't
-  // support showSaveFilePicker.
+  // support the File System Access API at all.
   async function exportToFile() {
     const { filename, json } = buildExportFile();
+
+    // A handle recovered from a previous session whose permission wasn't
+    // confirmed yet — this click IS a real user gesture, so this is the
+    // first place it's safe to actually ask for it.
+    if (!currentFileHandle && pendingFileHandle) {
+      try {
+        const perm = await pendingFileHandle.requestPermission({ mode: "readwrite" });
+        if (perm === "granted") currentFileHandle = pendingFileHandle;
+      } catch { /* ignore — falls through to picking a file below */ }
+      pendingFileHandle = null;
+    }
+
+    if (currentFileHandle) {
+      try {
+        const writable = await currentFileHandle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        flashSavedConfirmation();
+        return;
+      } catch {
+        currentFileHandle = null; // handle went stale (file moved/deleted, permission revoked) — fall through and ask again
+        clearPersistedFileHandle();
+      }
+    }
 
     if (window.showSaveFilePicker) {
       try {
@@ -1165,6 +1500,8 @@
         const writable = await handle.createWritable();
         await writable.write(json);
         await writable.close();
+        currentFileHandle = handle;
+        persistFileHandle(handle);
         return;
       } catch (err) {
         if (err && err.name === "AbortError") return; // user cancelled the picker
@@ -1183,31 +1520,119 @@
     URL.revokeObjectURL(url);
   }
 
+  // Brief visual confirmation for the silent in-place save above — with
+  // no OS "Save As" dialog to reassure the person something happened,
+  // the button quickly says so itself instead.
+  function flashSavedConfirmation() {
+    const btn = document.getElementById("exportBtn");
+    const original = btn.textContent;
+    btn.textContent = t("savedConfirmation");
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  }
+
+  // Hands the file straight to the OS share sheet (AirDrop, Nearby Share,
+  // Bluetooth, a messaging app, email...) so sending the tree to someone
+  // else doesn't require a separate save-then-attach step. Only shown at
+  // all when the browser can actually share files — support is mostly
+  // phones (Android Chrome, iOS Safari); desktop browsers fall back to
+  // the plain Save-to-file button instead, which stays visible.
+  async function shareFile() {
+    const { filename, json } = buildExportFile();
+    const file = new File([json], filename, { type: "application/json" });
+    try {
+      await navigator.share({ files: [file], title: t("pageTitle") });
+    } catch (err) {
+      if (err && err.name === "AbortError") return; // the person themselves closed the share sheet — nothing to report
+      // Sharing failed for some other reason (common on desktop: the OS
+      // share sheet has no app registered for this file type, even
+      // though canShare() said yes). By this point the click's own
+      // user-activation may already be spent, so silently falling back
+      // to exportToFile() here risks it skipping the "where to save"
+      // picker and just dropping the file with no dialog at all — so
+      // instead of that, or a blocking alert(), just a quiet flash on
+      // the button itself: enough to say "that didn't work" without
+      // interrupting anything.
+      const btn = document.getElementById("shareBtn");
+      const original = btn.textContent;
+      btn.textContent = t("shareUnavailable");
+      setTimeout(() => { btn.textContent = original; }, 1800);
+    }
+  }
+
+  async function shareIsSupported() {
+    if (!navigator.share || !navigator.canShare) return false;
+    // canShare() only checks that the BROWSER is capable of sharing this
+    // file type at all, not that this specific device actually has
+    // anything registered to receive it — desktop Chrome routinely
+    // answers "yes" here and then the share sheet itself has no
+    // destination for a .json file, so the button would appear but never
+    // work. Phones (Android Chrome, iOS Safari) reliably do have targets
+    // (Messages, Mail, WhatsApp, AirDrop...) for an arbitrary file, so
+    // this only shows the button on touch-primary ("no hover") devices —
+    // the same signal hoverCapable() uses elsewhere to tell a phone from
+    // a desktop/laptop.
+    if (hoverCapable()) return false;
+    try {
+      const probe = new File(["x"], "probe.json", { type: "application/json" });
+      return navigator.canShare({ files: [probe] });
+    } catch {
+      return false;
+    }
+  }
+
+  // Resolves true only if the file's contents actually replaced the tree
+  // (false for bad JSON, the wrong shape, or the person cancelling the
+  // overwrite confirmation) — callers that connect this file for future
+  // quick-saves (see currentFileHandle) need to know it actually took.
   function importFromFile(file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      let imported;
-      try {
-        imported = JSON.parse(reader.result);
-      } catch {
-        alert(t("alertInvalidJson"));
-        return;
-      }
-      if (!Array.isArray(imported) || !imported.every(p => p && typeof p.id === "string" && typeof p.name === "string")) {
-        alert(t("alertWrongFormat"));
-        return;
-      }
-      if (people.length > 0 && !confirm(t("confirmImport", { n: imported.length, m: people.length }))) {
-        return;
-      }
-      people = imported;
-      if (editingId) cancelEdit(); // also resets the form/submit button out of "editing" state
-      hidePersonInfo();
-      save();
-      render();
-    };
-    reader.onerror = () => alert(t("alertReadError"));
-    reader.readAsText(file);
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        let imported;
+        try {
+          imported = JSON.parse(reader.result);
+        } catch {
+          alert(t("alertInvalidJson"));
+          resolve(false);
+          return;
+        }
+        if (!Array.isArray(imported) || !imported.every(p => p && typeof p.id === "string" && typeof p.name === "string")) {
+          alert(t("alertWrongFormat"));
+          resolve(false);
+          return;
+        }
+
+        if (people.length > 0) {
+          const currentIds = new Set(people.map(p => p.id));
+          const added = imported.filter(p => !currentIds.has(p.id)).length;
+          const updated = imported.length - added;
+          const kept = people.length - updated;
+          if (!confirm(t("confirmImport", { added, updated, kept }))) {
+            resolve(false);
+            return;
+          }
+        }
+
+        // Merge by id rather than replacing outright: anyone from the file
+        // who's new here gets added, anyone who already exists here gets
+        // updated to match the file's version of them, and anyone who
+        // exists here but ISN'T in the file is left alone. This is what
+        // lets a correction made on one device and a new person added on
+        // another both survive loading either file — a plain replace
+        // would silently drop whichever side wasn't in the file just
+        // opened (see the phone/computer mix-up this was built to fix).
+        const importedIds = new Set(imported.map(p => p.id));
+        people = people.filter(p => !importedIds.has(p.id)).concat(imported);
+
+        if (editingId) cancelEdit(); // also resets the form/submit button out of "editing" state
+        hidePersonInfo();
+        save();
+        render();
+        resolve(true);
+      };
+      reader.onerror = () => { alert(t("alertReadError")); resolve(false); };
+      reader.readAsText(file);
+    });
   }
 
   // --- Generation layout -----------------------------------------------
@@ -1719,8 +2144,35 @@
 
   // --- Rendering ---------------------------------------------------------
 
+  // A quick at-a-glance summary of the tree's size — handy once it's grown
+  // past what's obvious from a single screenful of cards.
+  function updateTreeStats() {
+    const el = document.getElementById("treeStats");
+    if (people.length === 0) { el.hidden = true; return; }
+    el.hidden = false;
+
+    const genCount = new Set(Object.values(computeGenerations())).size;
+    const peopleLabel = people.length === 1 ? t("statPeopleOne") : t("statPeopleMany", { n: people.length });
+    const genLabel = genCount === 1 ? t("statGenOne") : t("statGenMany", { n: genCount });
+    const parts = [peopleLabel, genLabel];
+
+    let oldest = null, youngest = null;
+    for (const p of people) {
+      const age = calculateAge(p.birth, p.death);
+      if (age === null) continue;
+      if (!oldest || age > oldest.age) oldest = { p, age };
+      if (!youngest || age < youngest.age) youngest = { p, age };
+    }
+    if (oldest) parts.push(t("statOldest", { name: oldest.p.name, age: oldest.age }));
+    if (youngest && youngest.p.id !== oldest.p.id) parts.push(t("statYoungest", { name: youngest.p.name, age: youngest.age }));
+
+    el.textContent = parts.join(" · ");
+  }
+
   function render() {
     refreshDropdowns();
+    refreshRelSelects();
+    updateTreeStats();
 
     const wrap = document.getElementById("treeInner");
     const emptyHint = document.getElementById("emptyHint");
@@ -1846,6 +2298,7 @@
       const pos = positions[p.id];
       const el = document.createElement("div");
       el.className = "person" + (p.id === editingId ? " editing" : "");
+      el.dataset.personId = p.id;
       el.style.left = (pos.x - CARD_W / 2) + "px";
       el.style.top = pos.y + "px";
       const bornText = formatDate(p.birth) || "—";
@@ -1876,6 +2329,17 @@
         if (confirm(t("confirmDelete", { name: p.name }))) deletePerson(p.id);
       });
 
+      // The card's own photo is small and cropped to the chosen face-focus
+      // point — clicking it opens the original photo full-size and
+      // uncropped, with no focus-marker circle (that's only relevant while
+      // choosing the focus point in the add/edit form).
+      if (p.photo) {
+        el.querySelector(".photo").addEventListener("click", (e) => {
+          e.stopPropagation();
+          openPhotoLightbox(p.photo);
+        });
+      }
+
       // Desktop: hovering reveals the full info popup passively, and a
       // click still jumps straight into editing. Touch devices have no
       // hover, so a tap shows the info popup instead (with its own Edit
@@ -1894,7 +2358,27 @@
     }
 
     applyZoom();
+    reapplySearchHighlight();
+    reapplyRelationshipHighlight();
   }
+
+  // --- Photo lightbox ------------------------------------------------
+
+  function openPhotoLightbox(src) {
+    document.getElementById("photoLightboxImg").src = src;
+    document.getElementById("photoLightbox").hidden = false;
+  }
+  function closePhotoLightbox() {
+    document.getElementById("photoLightbox").hidden = true;
+    document.getElementById("photoLightboxImg").src = "";
+  }
+  document.getElementById("photoLightboxClose").addEventListener("click", closePhotoLightbox);
+  document.getElementById("photoLightbox").addEventListener("click", (e) => {
+    if (e.target.id === "photoLightbox") closePhotoLightbox();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.getElementById("photoLightbox").hidden) closePhotoLightbox();
+  });
 
   // --- Zoom controls -------------------------------------------------
   // A CSS transform on #treeInner, visually scaling it, while
@@ -1962,6 +2446,257 @@
     e.preventDefault();
     setZoom(zoomLevel * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
   }, { passive: false });
+
+  // --- Search ----------------------------------------------------------
+  // Finds people by name and scrolls/zooms-view to center on a match —
+  // handy once the tree has enough people that scanning for one by eye
+  // gets tedious. Re-run automatically after every render() (see
+  // reapplySearchHighlight) since render() rebuilds every .person element
+  // from scratch each time, which would otherwise silently drop the
+  // highlight the moment anything else in the tree changes.
+
+  let searchMatchIds = [];
+  let searchCurrent = -1;
+
+  function runSearch(query) {
+    const q = query.trim().toLowerCase();
+    document.getElementById("personSearchClear").hidden = q === "";
+
+    if (q === "") {
+      searchMatchIds = [];
+      searchCurrent = -1;
+      clearSearchHighlight();
+      document.getElementById("personSearchCount").hidden = true;
+      return;
+    }
+
+    searchMatchIds = people.filter(p => p.name.toLowerCase().includes(q)).map(p => p.id);
+    searchCurrent = searchMatchIds.length ? 0 : -1;
+    applySearchHighlight(true);
+  }
+
+  function clearSearchHighlight() {
+    document.querySelectorAll(".person.search-match, .person.search-current")
+      .forEach(el => el.classList.remove("search-match", "search-current"));
+  }
+
+  // scrollToCurrent is false for a passive resync (reapplySearchHighlight,
+  // run after every render — including ones that have nothing to do with
+  // the search) so it doesn't yank the view back to the current match
+  // just because something unrelated changed; true for anything the
+  // person did on purpose (typing, pressing Enter).
+  function applySearchHighlight(scrollToCurrent) {
+    clearSearchHighlight();
+    const countEl = document.getElementById("personSearchCount");
+    if (searchMatchIds.length === 0) {
+      countEl.hidden = false;
+      countEl.textContent = t("searchNoMatches");
+      return;
+    }
+    countEl.hidden = false;
+    countEl.textContent = `${searchCurrent + 1}/${searchMatchIds.length}`;
+    searchMatchIds.forEach((id, i) => {
+      const el = document.querySelector(`.person[data-person-id="${id}"]`);
+      if (el) el.classList.add(i === searchCurrent ? "search-current" : "search-match");
+    });
+    if (!scrollToCurrent) return;
+    const currentEl = document.querySelector(`.person[data-person-id="${searchMatchIds[searchCurrent]}"]`);
+    if (currentEl) currentEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  }
+
+  // Re-runs the CURRENT search query against the live (possibly just
+  // edited) people list — called at the end of render() so a search
+  // stays accurate across edits (a newly added or renamed person can
+  // join the results) instead of silently going stale, but without
+  // forcing the view to jump back to the current match every time.
+  function reapplySearchHighlight() {
+    const input = document.getElementById("personSearch");
+    if (!input || input.value.trim() === "") return;
+    const currentId = searchMatchIds[searchCurrent];
+    const q = input.value.trim().toLowerCase();
+    searchMatchIds = people.filter(p => p.name.toLowerCase().includes(q)).map(p => p.id);
+    const idx = searchMatchIds.indexOf(currentId);
+    searchCurrent = idx !== -1 ? idx : (searchMatchIds.length ? 0 : -1);
+    applySearchHighlight(false);
+  }
+
+  function advanceSearchMatch(delta) {
+    if (searchMatchIds.length === 0) return;
+    searchCurrent = (searchCurrent + delta + searchMatchIds.length) % searchMatchIds.length;
+    applySearchHighlight(true);
+  }
+
+  const personSearchInput = document.getElementById("personSearch");
+  personSearchInput.addEventListener("input", () => runSearch(personSearchInput.value));
+  personSearchInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    advanceSearchMatch(e.shiftKey ? -1 : 1);
+  });
+  document.getElementById("personSearchClear").addEventListener("click", () => {
+    personSearchInput.value = "";
+    runSearch("");
+    personSearchInput.focus();
+  });
+
+  // --- Relationship finder -----------------------------------------------
+  // Picks two people and highlights the shortest connecting path (through
+  // parent/child/spouse links) between them — handy once the tree is big
+  // enough that the connection between two distant people isn't obvious
+  // just by looking. Describes the path as a plain step-by-step chain
+  // (spouse/parent/child) rather than a precise kinship term (cousin,
+  // great-uncle, etc.) since the app doesn't record gender and getting
+  // Bulgarian kinship terms grammatically right without it isn't reliable.
+
+  let relPathIds = [];
+
+  function relationNeighbors(id) {
+    const p = byId(id);
+    if (!p) return [];
+    const neighbors = [...p.parents];
+    if (p.spouse) neighbors.push(p.spouse);
+    for (const q of people) {
+      if (q.parents.includes(id)) neighbors.push(q.id);
+    }
+    return neighbors;
+  }
+
+  function findRelationshipPath(aId, bId) {
+    if (aId === bId) return [aId];
+    const visited = new Set([aId]);
+    const queue = [[aId]];
+    while (queue.length) {
+      const path = queue.shift();
+      const last = path[path.length - 1];
+      for (const n of relationNeighbors(last)) {
+        if (visited.has(n)) continue;
+        if (n === bId) return [...path, n];
+        visited.add(n);
+        queue.push([...path, n]);
+      }
+    }
+    return null;
+  }
+
+  function relationLabel(uId, vId) {
+    const u = byId(uId), v = byId(vId);
+    if (!u || !v) return "";
+    if (u.spouse === vId) return t("relSpouse");
+    if (u.parents.includes(vId)) return t("relParent"); // v is u's parent
+    if (v.parents.includes(uId)) return t("relChild"); // v is u's child
+    return "";
+  }
+
+  function describeRelationshipPath(pathIds) {
+    const parts = [byId(pathIds[0])?.name || "?"];
+    for (let i = 0; i < pathIds.length - 1; i++) {
+      parts.push(`(${relationLabel(pathIds[i], pathIds[i + 1])})`);
+      parts.push(byId(pathIds[i + 1])?.name || "?");
+    }
+    return parts.join(" → ");
+  }
+
+  function highlightRelationshipPath(pathIds) {
+    clearLineHighlight();
+    document.querySelectorAll(".person.rel-path").forEach(el => el.classList.remove("rel-path"));
+    const svg = document.querySelector("#treeInner svg");
+    if (svg) {
+      const edges = [];
+      for (let i = 0; i < pathIds.length - 1; i++) edges.push([pathIds[i], pathIds[i + 1]]);
+      svg.querySelectorAll("line").forEach((l) => {
+        const ids = (l.getAttribute("data-people") || "").split(" ");
+        const onPath = edges.some(([a, b]) => ids.includes(a) && ids.includes(b));
+        l.style.opacity = onPath ? "1" : "0.12";
+      });
+    }
+    pathIds.forEach((id) => {
+      const el = document.querySelector(`.person[data-person-id="${id}"]`);
+      if (el) el.classList.add("rel-path");
+    });
+  }
+
+  function clearRelationshipHighlight() {
+    clearLineHighlight();
+    document.querySelectorAll(".person.rel-path").forEach(el => el.classList.remove("rel-path"));
+  }
+
+  // Re-applies the current path's highlight after every render() (which
+  // rebuilds every .person element and SVG line from scratch) — mirrors
+  // reapplySearchHighlight. Drops the path if either person no longer exists.
+  function reapplyRelationshipHighlight() {
+    if (relPathIds.length === 0) return;
+    if (relPathIds.some(id => !byId(id))) {
+      relPathIds = [];
+      document.getElementById("relResult").hidden = true;
+      document.getElementById("relClearBtn").hidden = true;
+      return;
+    }
+    highlightRelationshipPath(relPathIds);
+  }
+
+  function refreshRelSelects() {
+    const sortedPeople = [...people].sort((a, b) => a.name.localeCompare(b.name, lang));
+    for (const selectId of ["relPersonA", "relPersonB"]) {
+      const select = document.getElementById(selectId);
+      const current = select.value;
+      const placeholderKey = selectId === "relPersonA" ? "relPersonAPlaceholder" : "relPersonBPlaceholder";
+      select.innerHTML = `<option value="">${escapeHtml(t(placeholderKey))}</option>`;
+      for (const p of sortedPeople) {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        select.appendChild(opt);
+      }
+      if (people.some(p => p.id === current)) select.value = current;
+    }
+  }
+
+  function showRelResult(message, isError) {
+    const resultEl = document.getElementById("relResult");
+    resultEl.hidden = false;
+    resultEl.textContent = message;
+    resultEl.classList.toggle("no-path", !!isError);
+  }
+
+  document.getElementById("relFindBtn").addEventListener("click", () => {
+    const aId = document.getElementById("relPersonA").value;
+    const bId = document.getElementById("relPersonB").value;
+    if (!aId || !bId) { showRelResult(t("relSelectBoth"), true); return; }
+    if (aId === bId) {
+      relPathIds = [];
+      clearRelationshipHighlight();
+      document.getElementById("relClearBtn").hidden = true;
+      showRelResult(t("relSamePerson"), true);
+      return;
+    }
+    const path = findRelationshipPath(aId, bId);
+    if (!path) {
+      relPathIds = [];
+      clearRelationshipHighlight();
+      document.getElementById("relClearBtn").hidden = true;
+      showRelResult(t("relNoPath"), true);
+      return;
+    }
+    relPathIds = path;
+    document.getElementById("relClearBtn").hidden = false;
+    showRelResult(describeRelationshipPath(path), false);
+    highlightRelationshipPath(path);
+    const firstEl = document.querySelector(`.person[data-person-id="${path[0]}"]`);
+    if (firstEl) firstEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  });
+
+  document.getElementById("relClearBtn").addEventListener("click", () => {
+    relPathIds = [];
+    clearRelationshipHighlight();
+    document.getElementById("relResult").hidden = true;
+    document.getElementById("relClearBtn").hidden = true;
+    document.getElementById("relPersonA").value = "";
+    document.getElementById("relPersonB").value = "";
+  });
+
+  for (const selectId of ["relPersonA", "relPersonB"]) {
+    setupTypeAhead(document.getElementById(selectId));
+  }
 
   // --- Person info popup --------------------------------------------
   // Shows the details that don't fit on the card itself (full name if
@@ -2054,6 +2789,11 @@
     infoPersonId = null;
     document.getElementById("personInfoPopup").hidden = true;
     clearLineHighlight();
+    // clearLineHighlight() resets EVERY line back to fully visible, which
+    // would silently wipe out an active relationship-path highlight the
+    // moment the person just hovers/taps any card afterward — restore it
+    // right after, same as render() does.
+    reapplyRelationshipHighlight();
   }
 
   // A brief grace period on mouseleave — without it, moving the cursor from
@@ -2108,12 +2848,17 @@
 
   function refreshDropdowns() {
     const blockedAsParent = editingId ? descendantsOf(editingId) : new Set();
+    // Alphabetical by name (locale-aware, so Cyrillic sorts correctly too)
+    // rather than insertion order — makes a long dropdown actually
+    // scannable instead of listing people in whatever order they happened
+    // to be added.
+    const sortedPeople = [...people].sort((a, b) => a.name.localeCompare(b.name, lang));
     for (const selectId of ["fParent1", "fParent2", "fSpouse"]) {
       const select = document.getElementById(selectId);
       const current = select.value;
       const isParentField = selectId === "fParent1" || selectId === "fParent2";
       select.innerHTML = `<option value="">${escapeHtml(t("none"))}</option>`;
-      for (const p of people) {
+      for (const p of sortedPeople) {
         if (p.id === editingId) continue; // a person can't be their own parent/spouse
         if (isParentField && blockedAsParent.has(p.id)) continue; // would make editingId their own ancestor
         const opt = document.createElement("option");
@@ -2123,6 +2868,30 @@
       }
       if (people.some(p => p.id === current) && !(isParentField && blockedAsParent.has(current))) select.value = current;
     }
+  }
+
+  // Custom type-ahead for the parent/spouse <select> elements: native
+  // browser type-ahead is inconsistent across browsers, so we implement it
+  // ourselves — typed letters accumulate into a buffer (reset after a short
+  // pause) and jump the select to the first alphabetically-sorted option
+  // (already sorted by refreshDropdowns) whose name starts with that buffer.
+  function setupTypeAhead(select) {
+    let buffer = "";
+    let resetTimer = null;
+    select.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.length !== 1) return; // ignore Tab, Arrow keys, Enter, etc.
+      clearTimeout(resetTimer);
+      buffer += e.key.toLowerCase();
+      resetTimer = setTimeout(() => { buffer = ""; }, 800);
+      const match = [...select.options].find(
+        (opt) => opt.value && opt.textContent.toLowerCase().startsWith(buffer)
+      );
+      if (match) {
+        select.value = match.value;
+        e.preventDefault();
+      }
+    });
   }
 
   // Escapes for safe use in BOTH HTML text content and quoted attribute
@@ -2447,6 +3216,7 @@
 
   document.getElementById("fPhotoBtn").addEventListener("click", () => document.getElementById("fPhoto").click());
   document.getElementById("photoRemoveBtn").addEventListener("click", () => {
+    if (!confirm(t("confirmRemovePhoto"))) return;
     document.getElementById("fPhoto").value = "";
     hidePhotoPreview();
   });
@@ -2506,6 +3276,16 @@
   });
 
   document.getElementById("clearAllBtn").addEventListener("click", clearAll);
+
+  document.getElementById("undoBtn").addEventListener("click", () => {
+    if (!undoSnapshot) return;
+    clearTimeout(undoHideTimer);
+    people = undoSnapshot;
+    undoSnapshot = null;
+    document.getElementById("undoBanner").hidden = true;
+    save();
+    render();
+  });
   document.getElementById("printBtn").addEventListener("click", printTree);
 
   // The tree can easily be wider or taller than a single printed page —
@@ -2559,10 +3339,211 @@
     document.getElementById("treeInner").style.zoom = "";
     applyZoom(); // restores the transform-based on-screen zoom
   });
+
+  // --- Export as image (PNG) ----------------------------------------------
+  // Draws the whole tree onto an off-screen <canvas> and downloads it as a
+  // PNG — independent of DOM/SVG rendering (which foreignObject-to-canvas
+  // export handles unreliably across browsers, especially Safari/iOS,
+  // where such a canvas is often left "tainted" and toDataURL()/toBlob()
+  // throws). Re-runs layout() to get fresh positions rather than reading
+  // the live DOM, since the DOM may currently be scaled by on-screen zoom.
+  async function exportImage() {
+    if (people.length === 0) return;
+
+    const { positions, width, height } = layout();
+    const PAD = 24, SCALE = 2; // 2x for a crisp PNG on high-DPI screens
+    const w = Math.ceil(width + PAD * 2), h = Math.ceil(height + PAD * 2);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w * SCALE;
+    canvas.height = h * SCALE;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(SCALE, SCALE);
+
+    const css = getComputedStyle(document.documentElement);
+    const colors = {
+      bg: css.getPropertyValue("--bg").trim(),
+      card: css.getPropertyValue("--card").trim(),
+      cardBorder: css.getPropertyValue("--card-border").trim(),
+      ink: css.getPropertyValue("--ink").trim(),
+      inkDim: css.getPropertyValue("--ink-dim").trim(),
+      accent: css.getPropertyValue("--accent").trim(),
+    };
+
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, w, h);
+    ctx.translate(PAD, PAD);
+
+    const images = new Map();
+    await Promise.all(people.filter(p => p.photo).map(p => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => { images.set(p.id, img); resolve(); };
+      img.onerror = () => resolve();
+      img.src = p.photo;
+    })));
+
+    function strokeLine(x1, y1, x2, y2, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    // Connector lines — mirrors the SVG-drawing logic in render().
+    const drawnSpousePairs = new Set();
+    for (const p of people) {
+      if (p.spouse && byId(p.spouse)) {
+        const key = [p.id, p.spouse].sort().join("|");
+        if (drawnSpousePairs.has(key)) continue;
+        drawnSpousePairs.add(key);
+        const a = positions[p.id], b = positions[p.spouse];
+        const spouseColor = theme === "light" ? "rgba(179,114,28,0.55)" : "rgba(232,176,75,0.5)";
+        strokeLine(a.x, a.y + CARD_H / 2, b.x, b.y + CARD_H / 2, spouseColor);
+      }
+    }
+    for (const p of people) {
+      if (p.parents.length === 0) continue;
+      const validParents = p.parents.filter(id => positions[id]);
+      if (validParents.length === 0) continue;
+      const parentXs = validParents.map(id => positions[id].x);
+      const parentBottoms = validParents.map(id => positions[id].y + CARD_H);
+      const busY = Math.max(...parentBottoms) + 14;
+      const originX = parentXs.reduce((a, b) => a + b, 0) / parentXs.length;
+      const familyColor = familyLineColor(validParents);
+      parentXs.forEach((x, i) => strokeLine(x, parentBottoms[i], x, busY, familyColor));
+      const minX = Math.min(...parentXs), maxX = Math.max(...parentXs);
+      if (minX !== maxX) strokeLine(minX, busY, maxX, busY, familyColor);
+      const childPos = positions[p.id];
+      const midY = originX === childPos.x ? busY : (busY + childPos.y) / 2;
+      strokeLine(originX, busY, originX, midY, familyColor);
+      strokeLine(originX, midY, childPos.x, midY, familyColor);
+      strokeLine(childPos.x, midY, childPos.x, childPos.y, familyColor);
+    }
+
+    // Cards.
+    function roundRect(x, y, rw, rh, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + rw, y, x + rw, y + rh, r);
+      ctx.arcTo(x + rw, y + rh, x, y + rh, r);
+      ctx.arcTo(x, y + rh, x, y, r);
+      ctx.arcTo(x, y, x + rw, y, r);
+      ctx.closePath();
+    }
+    for (const p of people) {
+      const pos = positions[p.id];
+      const x = pos.x - CARD_W / 2, y = pos.y;
+      roundRect(x, y, CARD_W, CARD_H, 10);
+      ctx.fillStyle = colors.card;
+      ctx.fill();
+      ctx.strokeStyle = colors.cardBorder;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const padX = 10, photoSize = 34, cy = y + 10;
+      const img = images.get(p.id);
+      if (img) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x + padX + photoSize / 2, cy + photoSize / 2, photoSize / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(img, x + padX, cy, photoSize, photoSize);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.arc(x + padX + photoSize / 2, cy + photoSize / 2, photoSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.card;
+        ctx.font = "bold 14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText((p.name.trim().charAt(0) || "?").toUpperCase(), x + padX + photoSize / 2, cy + photoSize / 2 + 1);
+      }
+
+      const textX = x + padX + photoSize + 8;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(textX, y, CARD_W - (textX - x) - padX, CARD_H - 10);
+      ctx.clip();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = colors.ink;
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText(p.name, textX, cy + 12);
+
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = colors.inkDim;
+      const bornText = formatDate(p.birth) || "—";
+      const deathText = formatDate(p.death);
+      ctx.fillText(deathText ? `${bornText} – ${deathText}` : bornText, textX, cy + 27);
+
+      const age = calculateAge(p.birth, p.death);
+      if (age !== null) ctx.fillText(t(p.death ? "agedX" : "ageX", { age }), textX, cy + 41);
+      ctx.restore();
+    }
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `family-tree-${stamp}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, "image/png");
+  }
+
+  // Fires in every OTHER tab/window on this origin when localStorage
+  // changes here — never in the tab that made the change itself. Without
+  // this, an older tab left open (e.g. the installed app in one window
+  // and a plain browser tab in another) keeps showing whatever it loaded
+  // at open time; if the person later triggers ANY save in that stale
+  // tab (an edit, a delete, even just adding someone), it silently
+  // overwrites localStorage with its outdated in-memory copy — undoing
+  // a newer save (e.g. importing a corrected file) made in the other
+  // tab, with no error or warning. Reloading from storage here instead
+  // keeps every open tab in sync with whichever one saved last.
+  window.addEventListener("storage", (e) => {
+    if (e.key !== STORAGE_KEY) return;
+    people = load();
+    if (editingId) cancelEdit();
+    hidePersonInfo();
+    render();
+  });
   document.getElementById("exportBtn").addEventListener("click", exportToFile);
+  document.getElementById("exportImageBtn").addEventListener("click", exportImage);
+  document.getElementById("shareBtn").addEventListener("click", shareFile);
+  shareIsSupported().then((supported) => { document.getElementById("shareBtn").hidden = !supported; });
 
   const importFileInput = document.getElementById("importFile");
-  document.getElementById("importBtn").addEventListener("click", () => importFileInput.click());
+  document.getElementById("importBtn").addEventListener("click", async () => {
+    // Prefer the File System Access API so a successful load also hands
+    // back a read-write handle — that's what lets "Save to file"
+    // afterward go straight back into THIS file instead of prompting for
+    // a new one every time (see currentFileHandle / exportToFile).
+    if (window.showOpenFilePicker) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: "JSON", accept: { "application/json": [".json"] } }],
+        });
+        const file = await handle.getFile();
+        if (await importFromFile(file)) {
+          currentFileHandle = handle;
+          persistFileHandle(handle);
+        }
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // user cancelled the picker
+        // any other error (e.g. unsupported in this context) — fall through to the classic picker below
+      }
+    }
+    importFileInput.click();
+  });
   importFileInput.addEventListener("change", () => {
     if (importFileInput.files[0]) importFromFile(importFileInput.files[0]);
     importFileInput.value = ""; // so picking the same file again still fires "change"
@@ -2581,6 +3562,10 @@
     applyTheme();
     render(); // family-line colors bake theme-dependent lightness at render time, unlike var(--line)
   });
+
+  for (const selectId of ["fParent1", "fParent2", "fSpouse"]) {
+    setupTypeAhead(document.getElementById(selectId));
+  }
 
   applyTheme();
   applyStaticTranslations();

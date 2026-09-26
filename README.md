@@ -15,13 +15,22 @@ and the tree lays itself out automatically, generation by generation.
 **Features**
 - Automatic generational layout — parents, spouses, siblings, and children
   are positioned and connected automatically as you add people.
-- Photos with face-centering, birth/death dates with automatic age
-  calculation, and an optional "family of origin" field.
+- Photos with face-centering (click a photo on the tree to see it
+  full-size), birth/death dates with automatic age calculation, and an
+  optional "family of origin" field.
+- Search people by name, and find the relationship path between any two
+  people — the connection is highlighted right on the tree.
+- Undo for an accidental delete, and export the whole tree as a PNG
+  image to share, in addition to Print.
+- A quick summary of the tree (people, generations, oldest/youngest) at
+  a glance.
 - Works fully offline once installed, and can be installed like a real
   app on your phone or computer.
 - Your data stays on your own device (saved in the browser) — nothing is
   uploaded anywhere. Use "Save to file" / "Load from file" to back up or
-  move your tree between devices.
+  move your tree between devices — loading a file merges it with what's
+  already there instead of overwriting it, so corrections made on one
+  device and new people added on another both survive.
 - English and Bulgarian interface, light and dark theme.
 
 ### Built with
@@ -112,13 +121,23 @@ Open **https://petaryankov.github.io/Family-Tree/** and:
 **Възможности**
 - Автоматично подреждане по поколения — родители, съпрузи, братя/сестри
   и деца се позиционират и свързват автоматично, докато добавяш хора.
-- Снимки с центриране на лицето, дати на раждане/смърт с автоматично
-  изчислена възраст, и незадължително поле "Род" (произход).
+- Снимки с центриране на лицето (клик върху снимка в дървото я показва
+  голяма), дати на раждане/смърт с автоматично изчислена възраст, и
+  незадължително поле "Род" (произход).
+- Търсене на хора по име, и намиране на роднинската връзка между двама
+  души — връзката се подсветва направо в дървото.
+- Отмяна при случайно изтриване, и износ на цялото дърво като PNG
+  снимка за споделяне, освен вградения печат.
+- Кратка статистика за дървото (хора, поколения, най-възрастен/най-млад)
+  на пръв поглед.
 - Работи напълно офлайн след инсталиране, и може да се инсталира като
   истинско приложение на телефон или компютър.
 - Данните остават само на твоето устройство (запазват се в браузъра) —
   нищо не се качва никъде. "Запази във файл" / "Зареди от файл" служат
-  за резервно копие или прехвърляне между устройства.
+  за резервно копие или прехвърляне между устройства — зареждането
+  обединява файла с това, което вече е тук, вместо да го презаписва, така
+  че поправки на едно устройство и нови хора, добавени на друго, се
+  запазват и двете.
 - Интерфейс на български и английски, светла и тъмна тема.
 
 ### С какво е направено
