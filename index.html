@@ -335,29 +335,29 @@
     box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
   }
 
-  .person-info-popup .info-name {
+  .person-info-popup .info-name, .photo-lightbox-info .info-name {
     font-weight: 700;
     font-size: 0.9rem;
     margin-bottom: 0.4rem;
     word-break: break-word;
   }
 
-  .person-info-popup .info-row {
+  .person-info-popup .info-row, .photo-lightbox-info .info-row {
     display: flex;
     gap: 0.4rem;
     font-size: 0.76rem;
     color: var(--ink);
     padding: 0.15rem 0;
   }
-  .person-info-popup .info-row[hidden] { display: none; }
+  .person-info-popup .info-row[hidden], .photo-lightbox-info .info-row[hidden] { display: none; }
 
-  .person-info-popup .info-label {
+  .person-info-popup .info-label, .photo-lightbox-info .info-label {
     flex: none;
     color: var(--ink-dim);
     min-width: 4.2rem;
   }
 
-  .person-info-popup .info-edit-btn {
+  .person-info-popup .info-edit-btn, .photo-lightbox-info .info-edit-btn {
     margin-top: 0.55rem;
     width: 100%;
     background: var(--btn-primary-bg);
@@ -490,6 +490,7 @@
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--ink-dim);
+    cursor: pointer;
   }
 
   .person .name {
@@ -668,11 +669,43 @@
     padding: 2rem;
   }
   .photo-lightbox[hidden] { display: none; }
-  .photo-lightbox img {
+  .photo-lightbox-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
     max-width: 100%;
     max-height: 100%;
+    overflow: auto;
+  }
+  .photo-lightbox-content img {
+    max-width: 100%;
+    max-height: 60vh;
     border-radius: 10px;
     box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.8);
+  }
+  .photo-lightbox-placeholder {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+    border: 1.5px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--ink-dim);
+  }
+  .photo-lightbox-placeholder[hidden] { display: none; }
+  .photo-lightbox-info {
+    width: 100%;
+    max-width: 300px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    flex-shrink: 0;
   }
   .photo-lightbox-close {
     position: fixed;
@@ -945,7 +978,7 @@
     </div>
   </section>
 
-  <footer><span data-i18n="footer">© 2026 Petar Yankov</span> · <span class="version">v1.1</span></footer>
+  <footer><span data-i18n="footer">© 2026 Petar Yankov</span> · <span class="version">v1.2</span></footer>
 </main>
 
 <div id="undoBanner" class="update-banner" hidden>
@@ -954,8 +987,22 @@
 </div>
 
 <div id="photoLightbox" class="photo-lightbox" hidden>
-  <img id="photoLightboxImg" alt="">
   <button type="button" id="photoLightboxClose" class="photo-lightbox-close" data-i18n-aria-label="close" aria-label="Close">×</button>
+  <div class="photo-lightbox-content">
+    <img id="photoLightboxImg" alt="">
+    <div id="photoLightboxPlaceholder" class="photo-lightbox-placeholder" hidden></div>
+    <div class="photo-lightbox-info">
+      <div class="info-name" id="lbName"></div>
+      <div class="info-row" id="lbOrigin" hidden><span class="info-label" data-i18n="infoOriginLabel">Origin</span><span id="lbOriginValue"></span></div>
+      <div class="info-row" id="lbBorn" hidden><span class="info-label" data-i18n="infoBornLabel">Born</span><span id="lbBornValue"></span></div>
+      <div class="info-row" id="lbDied" hidden><span class="info-label" data-i18n="infoDiedLabel">Died</span><span id="lbDiedValue"></span></div>
+      <div class="info-row" id="lbAge" hidden><span class="info-label" id="lbAgeLabelText">Age</span><span id="lbAgeValue"></span></div>
+      <div class="info-row" id="lbSpouse" hidden><span class="info-label" data-i18n="infoSpouseLabel">Spouse</span><span id="lbSpouseValue"></span></div>
+      <div class="info-row" id="lbParents" hidden><span class="info-label" data-i18n="infoParentsLabel">Parents</span><span id="lbParentsValue"></span></div>
+      <div class="info-row" id="lbChildren" hidden><span class="info-label" data-i18n="infoChildrenLabel">Children</span><span id="lbChildrenValue"></span></div>
+      <button type="button" id="photoLightboxEditBtn" class="info-edit-btn" data-i18n="editPerson">Edit</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1025,7 +1072,7 @@
       searchNoMatches: "No matches",
       emptyHint: "No one added yet — start with the first person above.",
       footer: "© 2026 Petar Yankov",
-      editHint: "Click to edit",
+      editHint: "Click for details",
       removePerson: "Remove {name}",
       agedX: "aged {age}",
       ageX: "age {age}",
@@ -1122,7 +1169,7 @@
       searchNoMatches: "Няма съвпадения",
       emptyHint: "Все още никой не е добавен — започни с първия човек отгоре.",
       footer: "© 2026 Петър Янков",
-      editHint: "Кликни за редакция",
+      editHint: "Кликни за детайли",
       removePerson: "Премахни {name}",
       agedX: "почина на {age}",
       ageX: "на {age} години",
@@ -2329,31 +2376,18 @@
         if (confirm(t("confirmDelete", { name: p.name }))) deletePerson(p.id);
       });
 
-      // The card's own photo is small and cropped to the chosen face-focus
-      // point — clicking it opens the original photo full-size and
-      // uncropped, with no focus-marker circle (that's only relevant while
-      // choosing the focus point in the add/edit form).
-      if (p.photo) {
-        el.querySelector(".photo").addEventListener("click", (e) => {
-          e.stopPropagation();
-          openPhotoLightbox(p.photo);
-        });
-      }
-
-      // Desktop: hovering reveals the full info popup passively, and a
-      // click still jumps straight into editing. Touch devices have no
-      // hover, so a tap shows the info popup instead (with its own Edit
-      // button inside it) rather than opening editing on a single tap.
+      // Clicking (or tapping) ANYWHERE on a card — the photo included —
+      // opens the same full view: photo (or placeholder initial) plus all
+      // the person's details, with Edit inside it. Desktop additionally
+      // reveals a small passive preview on hover, without needing a click.
       if (hoverCapable()) {
         el.addEventListener("mouseenter", () => { cancelHidePersonInfo(); showPersonInfo(p.id, el); });
         el.addEventListener("mouseleave", scheduleHidePersonInfo);
-        el.addEventListener("click", () => startEdit(p.id));
-      } else {
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          showPersonInfo(p.id, el);
-        });
       }
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openPhotoLightbox(p);
+      });
       wrap.appendChild(el);
     }
 
@@ -2364,11 +2398,36 @@
 
   // --- Photo lightbox ------------------------------------------------
 
-  function openPhotoLightbox(src) {
-    document.getElementById("photoLightboxImg").src = src;
+  const LIGHTBOX_INFO_IDS = {
+    name: "lbName", origin: "lbOrigin", originValue: "lbOriginValue",
+    born: "lbBorn", bornValue: "lbBornValue", died: "lbDied", diedValue: "lbDiedValue",
+    age: "lbAge", ageLabelText: "lbAgeLabelText", ageValue: "lbAgeValue",
+    parents: "lbParents", parentsValue: "lbParentsValue",
+    spouse: "lbSpouse", spouseValue: "lbSpouseValue",
+    children: "lbChildren", childrenValue: "lbChildrenValue",
+  };
+
+  let lightboxPersonId = null;
+
+  function openPhotoLightbox(person) {
+    lightboxPersonId = person.id;
+    const img = document.getElementById("photoLightboxImg");
+    const placeholder = document.getElementById("photoLightboxPlaceholder");
+    if (person.photo) {
+      img.hidden = false;
+      img.src = person.photo;
+      placeholder.hidden = true;
+    } else {
+      img.hidden = true;
+      img.src = "";
+      placeholder.hidden = false;
+      placeholder.textContent = (person.name.trim().charAt(0) || "?").toUpperCase();
+    }
+    fillPersonInfo(LIGHTBOX_INFO_IDS, person);
     document.getElementById("photoLightbox").hidden = false;
   }
   function closePhotoLightbox() {
+    lightboxPersonId = null;
     document.getElementById("photoLightbox").hidden = true;
     document.getElementById("photoLightboxImg").src = "";
   }
@@ -2378,6 +2437,11 @@
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !document.getElementById("photoLightbox").hidden) closePhotoLightbox();
+  });
+  document.getElementById("photoLightboxEditBtn").addEventListener("click", () => {
+    const id = lightboxPersonId;
+    closePhotoLightbox();
+    if (id) startEdit(id);
   });
 
   // --- Zoom controls -------------------------------------------------
@@ -2728,43 +2792,60 @@
     svg.querySelectorAll("line").forEach((l) => { l.style.opacity = ""; });
   }
 
+  // Fills a set of name/origin/born/died/age/parents/spouse/children fields
+  // (by element id) with one person's details — shared by the hover/tap info
+  // popup and the photo lightbox, which show the same details in different
+  // containers.
+  function fillPersonInfo(ids, person) {
+    document.getElementById(ids.name).textContent = person.name;
+
+    document.getElementById(ids.origin).hidden = !person.origin;
+    document.getElementById(ids.originValue).textContent = person.origin || "";
+
+    const bornText = formatDate(person.birth);
+    document.getElementById(ids.born).hidden = !bornText;
+    document.getElementById(ids.bornValue).textContent = bornText;
+
+    const diedText = formatDate(person.death);
+    document.getElementById(ids.died).hidden = !diedText;
+    document.getElementById(ids.diedValue).textContent = diedText;
+
+    const age = calculateAge(person.birth, person.death);
+    document.getElementById(ids.age).hidden = age === null;
+    document.getElementById(ids.ageLabelText).textContent = t(person.death ? "infoAgeAtDeathLabel" : "infoAgeLabel");
+    document.getElementById(ids.ageValue).textContent = age === null ? "" : (person.death ? t("livedYears", { age }) : String(age));
+
+    const parentNames = person.parents.map(pid => byId(pid)?.name).filter(Boolean);
+    document.getElementById(ids.parents).hidden = parentNames.length === 0;
+    document.getElementById(ids.parentsValue).textContent = parentNames.join(", ");
+
+    const spouseName = person.spouse ? byId(person.spouse)?.name : null;
+    document.getElementById(ids.spouse).hidden = !spouseName;
+    document.getElementById(ids.spouseValue).textContent = spouseName || "";
+
+    const children = people.filter(c => c.parents.includes(person.id));
+    document.getElementById(ids.children).hidden = children.length === 0;
+    document.getElementById(ids.childrenValue).textContent = children.length
+      ? `${children.length} — ${children.map(c => c.name).join(", ")}`
+      : "";
+  }
+
+  const INFO_POPUP_IDS = {
+    name: "infoName", origin: "infoOrigin", originValue: "infoOriginValue",
+    born: "infoBorn", bornValue: "infoBornValue", died: "infoDied", diedValue: "infoDiedValue",
+    age: "infoAge", ageLabelText: "infoAgeLabelText", ageValue: "infoAgeValue",
+    parents: "infoParents", parentsValue: "infoParentsValue",
+    spouse: "infoSpouse", spouseValue: "infoSpouseValue",
+    children: "infoChildren", childrenValue: "infoChildrenValue",
+  };
+
   function showPersonInfo(id, anchorEl) {
     const person = byId(id);
     if (!person) return;
     infoPersonId = id;
     highlightPersonConnections(id);
 
-    document.getElementById("infoName").textContent = person.name;
-
-    document.getElementById("infoOrigin").hidden = !person.origin;
-    document.getElementById("infoOriginValue").textContent = person.origin || "";
-
-    const bornText = formatDate(person.birth);
-    document.getElementById("infoBorn").hidden = !bornText;
-    document.getElementById("infoBornValue").textContent = bornText;
-
-    const diedText = formatDate(person.death);
-    document.getElementById("infoDied").hidden = !diedText;
-    document.getElementById("infoDiedValue").textContent = diedText;
-
-    const age = calculateAge(person.birth, person.death);
-    document.getElementById("infoAge").hidden = age === null;
-    document.getElementById("infoAgeLabelText").textContent = t(person.death ? "infoAgeAtDeathLabel" : "infoAgeLabel");
-    document.getElementById("infoAgeValue").textContent = age === null ? "" : (person.death ? t("livedYears", { age }) : String(age));
-
-    const parentNames = person.parents.map(pid => byId(pid)?.name).filter(Boolean);
-    document.getElementById("infoParents").hidden = parentNames.length === 0;
-    document.getElementById("infoParentsValue").textContent = parentNames.join(", ");
-
-    const spouseName = person.spouse ? byId(person.spouse)?.name : null;
-    document.getElementById("infoSpouse").hidden = !spouseName;
-    document.getElementById("infoSpouseValue").textContent = spouseName || "";
-
-    const children = people.filter(c => c.parents.includes(person.id));
-    document.getElementById("infoChildren").hidden = children.length === 0;
-    document.getElementById("infoChildrenValue").textContent = children.length
-      ? `${children.length} — ${children.map(c => c.name).join(", ")}`
-      : "";
+    fillPersonInfo(INFO_POPUP_IDS, person);
 
     const popup = document.getElementById("personInfoPopup");
     popup.hidden = false; // unhide first so offsetHeight below reflects real content

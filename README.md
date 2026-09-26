@@ -15,8 +15,9 @@ and the tree lays itself out automatically, generation by generation.
 **Features**
 - Automatic generational layout — parents, spouses, siblings, and children
   are positioned and connected automatically as you add people.
-- Photos with face-centering (click a photo on the tree to see it
-  full-size), birth/death dates with automatic age calculation, and an
+- Photos with face-centering — click anyone on the tree to see their
+  photo full-size together with all their details, with Edit right
+  there. Birth/death dates come with automatic age calculation, plus an
   optional "family of origin" field.
 - Search people by name, and find the relationship path between any two
   people — the connection is highlighted right on the tree.
@@ -121,9 +122,10 @@ Open **https://petaryankov.github.io/Family-Tree/** and:
 **Възможности**
 - Автоматично подреждане по поколения — родители, съпрузи, братя/сестри
   и деца се позиционират и свързват автоматично, докато добавяш хора.
-- Снимки с центриране на лицето (клик върху снимка в дървото я показва
-  голяма), дати на раждане/смърт с автоматично изчислена възраст, и
-  незадължително поле "Род" (произход).
+- Снимки с центриране на лицето — кликваш върху който и да е човек в
+  дървото, за да видиш снимката му голяма заедно с всичките му данни, с
+  бутон за редакция направо там. Датите на раждане/смърт са с автоматично
+  изчислена възраст, плюс незадължително поле "Род" (произход).
 - Търсене на хора по име, и намиране на роднинската връзка между двама
   души — връзката се подсветва направо в дървото.
 - Отмяна при случайно изтриване, и износ на цялото дърво като PNG
